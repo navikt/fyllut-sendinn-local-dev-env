@@ -1,0 +1,11 @@
+{
+  "name": "chores",
+  "description": "Maintenance helpers for routine repository chores.",
+  "version": "0.1.0",
+  "author": {
+    "name": "NAV"
+  },
+  "repository": "https://github.com/navikt/fyllut-sendinn-local-dev-env",
+  "keywords": ["chores", "maintenance"],
+  "skills": "skills/"
+}
