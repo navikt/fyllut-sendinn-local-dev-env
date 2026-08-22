@@ -1,0 +1,29 @@
+FROM docker/sandbox-templates:copilot-docker
+
+# Install extra development tools or runtimes your Copilot agent will need
+USER root
+RUN apt-get update && apt-get install -y \
+    curl \
+    jq \
+    ripgrep \
+    xvfb \
+    libglib-2.0 \
+    libdbus-1-3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0t64 \
+    libcups2 \
+    libcairo2 \
+    libgtk-3-0 \
+    libasound2t64 \
+    && rm -rf /var/lib/apt/lists/*
+
+USER agent
+
+RUN curl https://mise.run | sh
+
+ENV PATH="/home/agent/.local/bin:/home/agent/.local/share/mise/shims:${PATH}"
+
+# Copilot CLI's bundled ripgrep is built with a jemalloc that assumes 4 KB memory
+# pages and aborts on this arm64 VM's 16 KB pages, which silently breaks @-mention
+# file search. Fall back to the system ripgrep installed above.
+ENV USE_BUILTIN_RIPGREP=false

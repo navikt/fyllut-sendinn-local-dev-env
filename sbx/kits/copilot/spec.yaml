@@ -1,0 +1,56 @@
+schemaVersion: "2"
+kind: sandbox
+# Must not collide with a built-in agent name: `sbx` refuses to let a kit
+# override the built-in `copilot` agent. The agent name you pass to `sbx run`
+# is this `name`, not `copilot`.
+name: innsending-copilot
+version: "1.0.0"
+displayName: GitHub Copilot (innsending)
+description: >-
+  GitHub Copilot CLI for fyllut/sendinn local development, with the network
+  policy our repos need pre-approved.
+
+# `copilot` is the built-in sandbox kit for Copilot CLI, and it already resolves
+# to the Docker-in-Docker flavour (`docker/sandbox-templates:copilot-docker`).
+# Extending it inherits the parent's credentials (GH_TOKEN, COPILOT_GITHUB_TOKEN),
+# network allow list, volumes, entrypoint and agent instructions; everything
+# below is layered on top.
+extends: copilot
+
+sandbox:
+  # Built from sbx/templates/Dockerfile.sbx-copilot (FROM copilot-docker), which
+  # adds mise plus the Cypress runtime libraries. Build it before use:
+  #   docker build -f sbx/templates/Dockerfile.sbx-copilot sbx/templates -t innsending-sbx-copilot
+  image: "innsending-sbx-copilot:latest"
+
+permissions:
+  network:
+    allow:
+      # --- Maven / Gradle / JVM builds ---
+      - repo1.maven.org
+      - archive.apache.org
+      - packages.confluent.io
+      # Nav's mirror, used as the package/registry proxy for our JVM + npm builds
+      - github-package-registry-mirror.gc.nav.no
+
+      # --- mise toolchain manager (installed in the image, resolves runtimes at run time) ---
+      - mise.run
+      - mise-java.jdx.dev
+      - mise-versions.jdx.dev
+      - nodejs.org
+      - api.adoptium.net
+
+      # --- npm ---
+      - registry.npmjs.org
+      # Private Nav packages (for example fnrvalidator). Requires NODE_AUTH_TOKEN:
+      #   sbx secret set-custom --sandbox <name> --host npm.pkg.github.com \
+      #     --env NODE_AUTH_TOKEN --value "$PACKAGE_TOKEN"
+      - npm.pkg.github.com
+
+      # --- Cypress ---
+      - download.cypress.io
+      - cdn.cypress.io
+
+      # --- Nav design system / runtime assets pulled by the frontends ---
+      - cdn.nav.no
+      - www.nav.no
