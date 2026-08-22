@@ -15,10 +15,7 @@ NAV recommends [cplt](https://github.com/navikt/cplt) for running agents in a sa
 3. Build and load the custom Copilot image from the repository root:
 
    ```sh
-   docker build -f sbx/templates/Dockerfile.sbx-copilot sbx/templates -t innsending-sbx-copilot
-   docker save innsending-sbx-copilot:latest -o sbx/templates/innsending-sbx-copilot.tar
-   sbx template load sbx/templates/innsending-sbx-copilot.tar
-   sbx template ls
+   mise run sandbox:build
    ```
 
 The image extends Docker's [Copilot template](https://docs.docker.com/ai/sandboxes/customize/templates/) with a nested Docker engine, Cypress dependencies, and [mise](https://mise.jdx.dev/) for managing project-specific tool versions.
@@ -46,15 +43,21 @@ From the workspace containing the checked-out repositories, use either the kit o
 The kit uses the custom image and includes the required network policy:
 
 ```sh
-sbx run innsending-copilot --kit ./sbx/kits/copilot/
+mise run sandbox:run
 ```
 
-The agent name must be `innsending-copilot` because local kits cannot override the built-in `copilot` agent. The kit must be provided when creating the sandbox; it cannot be added later. Local kits require `kit.allowLocalKits` to be `true`, which is the default.
+Pass `--name` to choose a sandbox name:
+
+```sh
+mise run sandbox:run --name innsending
+```
+
+The agent name remains `innsending-copilot` because local kits cannot override the built-in `copilot` agent. The kit must be provided when creating the sandbox; it cannot be added later. Local kits require `kit.allowLocalKits` to be `true`, which is the default.
 
 Validate the kit after making changes:
 
 ```sh
-sbx kit validate ./sbx/kits/copilot/
+mise run sandbox:validate
 ```
 
 ### Manual setup

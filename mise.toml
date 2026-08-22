@@ -1,0 +1,32 @@
+[tasks."sandbox:build"]
+description = "Build and load the custom Copilot sandbox template"
+run = """
+docker build \
+  -f sbx/templates/Dockerfile.sbx-copilot \
+  sbx/templates \
+  -t innsending-sbx-copilot
+docker save \
+  innsending-sbx-copilot:latest \
+  -o sbx/templates/innsending-sbx-copilot.tar
+sbx template load sbx/templates/innsending-sbx-copilot.tar
+sbx template ls
+"""
+
+[tasks."sandbox:validate"]
+description = "Validate the Copilot sandbox kit"
+run = "sbx kit validate ./sbx/kits/copilot/"
+
+[tasks."sandbox:run"]
+description = "Start the Copilot sandbox with the local kit"
+usage = '''
+flag "--name <name>" help="Name the sandbox"
+'''
+run = '''
+if [ -n "${usage_name:-}" ]; then
+  set -- --name "$usage_name"
+else
+  set --
+fi
+
+sbx run innsending-copilot --kit ./sbx/kits/copilot/ "$@"
+'''
