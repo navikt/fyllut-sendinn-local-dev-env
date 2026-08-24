@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Create manual dependency upgrade PRs instead of merging bot PRs. Work in one repository unless a dependency contract crosses repository boundaries.
 
-Invoke `dependency-upgrade` before proceeding. That skill owns version eligibility, authoritative research, ecosystem-specific checks, migration work, validation, PR descriptions, and troubleshooting. This skill adds repository-wide inventory, grouping, stack orchestration, and replacement of bot PRs. When the skills conflict, this skill controls branch creation, PR bases, and stack submission.
+Invoke `dependency-upgrade` before proceeding. That skill owns version eligibility, authoritative research, ecosystem-specific checks, migration work, validation, PR descriptions, and troubleshooting. This skill adds repository-wide inventory, grouping, commit structure, stack orchestration, and replacement of bot PRs. When the skills conflict, this skill controls dependency grouping, commit structure, branch creation, PR bases, and stack submission.
 
 ## Stack rules
 
@@ -16,7 +16,8 @@ Invoke `dependency-upgrade` before proceeding. That skill owns version eligibili
 - Fetch `origin/main` and create the first stack branch directly from that remote-tracking branch. Never base the stack on local `main`, the current branch, or another remote. If `origin/main` does not exist, stop and notify the user.
 - Treat bot PRs as leads, not as sources of truth for target versions.
 - Put dependencies that must remain compatible in the same PR.
-- Separate unrelated major updates.
+- Put major application and build dependency updates in one PR. Commit each dependency separately when the upgrades do not require a shared change.
+- Give a major update its own PR at the top of the stack only when it has very high concrete risk or requires changes across many parts of the codebase.
 - Put all GitHub Actions updates in one PR at the bottom of the stack.
 - Put all Docker image updates in one separate major-change PR.
 - Put compatible application and build dependency patch and minor updates in one PR unless a meaningful breaking change makes that unsafe to review or validate.
@@ -42,9 +43,12 @@ Use this order, omitting empty groups:
 1. GitHub Actions
 2. Compatible application and build dependency patch and minor updates
 3. Docker images and runtimes
-4. One PR per unrelated major dependency group
+4. Major application and build dependency updates
+5. Any exceptional major update that needs its own PR
 
-Keep a major group together when one member requires another. Split it when the dependencies can upgrade independently or one change deserves a clear rollback boundary.
+The major layer may exceed the three-direct-dependency limit in `dependency-upgrade`. Keep dependencies that require each other in one commit. Otherwise, commit each dependency separately so reviewers can inspect and revert it without splitting the PR.
+
+Do not split a major update merely because it can upgrade independently. Split it only when the risk assessment identifies a very high-risk failure mode or the migration touches many different parts of the code. Put each exception above the grouped major layer and explain the decision in both PR descriptions.
 
 Write the proposed order and a concrete risk assessment before editing. Name likely failures rather than assigning generic risk labels.
 
@@ -78,11 +82,12 @@ For every remaining group:
    ```
 
 2. Follow the full `dependency-upgrade` workflow for that group. Use the stack branch instead of creating a standalone branch.
-3. Submit with `gh stack submit --auto --open`.
-4. Replace the generated PR body.
-5. Finish validation and required checks before adding another layer.
+3. In the grouped major layer, commit each independent dependency separately when possible. Keep required migration changes in the commit for the dependency that caused them.
+4. Submit with `gh stack submit --auto --open`.
+5. Replace the generated PR body.
+6. Finish validation and required checks before adding another layer.
 
-The stack inventory may contain many updates, but each major layer should remain a small related group. The patch and minor layer and the GitHub Actions layer are explicit exceptions because they are review categories for a periodic repository-wide upgrade.
+The stack inventory may contain many updates. The grouped major layer, patch and minor layer, and GitHub Actions layer are review categories for a periodic repository-wide upgrade, so they may contain more than three direct dependency updates.
 
 ## Replace bot PRs
 
