@@ -52,7 +52,23 @@ Pass `--name` to choose a sandbox name:
 mise run sandbox:run --name innsending
 ```
 
-The agent name remains `innsending-copilot` because local kits cannot override the built-in `copilot` agent. The kit must be provided when creating the sandbox; it cannot be added later. Local kits require `kit.allowLocalKits` to be `true`, which is the default.
+Alternatively, allow kits from the NAV GitHub organization and create the sandbox directly from the kit's Git URL:
+
+```sh
+sbx settings set kit.allowedSources '["docker.io/","github.com/navikt/"]'
+```
+
+```sh
+sbx run innsending-copilot --name ws1 --kit "git+https://github.com/navikt/fyllut-sendinn-local-dev-env.git#dir=sbx/kits/copilot"
+```
+
+`innsending-copilot` is the agent name defined by the kit, while `ws1` is the name of the sandbox. The kit only needs to be specified when the sandbox is created. To run the same sandbox later, omit `--kit`:
+
+```sh
+sbx run innsending-copilot --name ws1
+```
+
+The agent name remains `innsending-copilot` because kits cannot override the built-in `copilot` agent. Local kits require `kit.allowLocalKits` to be `true`, which is the default.
 
 Validate the kit after making changes:
 
