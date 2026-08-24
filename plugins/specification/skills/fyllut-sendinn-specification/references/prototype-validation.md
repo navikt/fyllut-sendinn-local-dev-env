@@ -49,9 +49,9 @@ For an interactive prototype, use a browser as the default presentation:
 4. Also print the full URL so the user can reopen it.
 5. Keep the server running until the user records a verdict.
 
-If the prototype needs the real fyllut or bygger application, use the
-`start-dev-servers` skill and provide the exact prototype route. Otherwise,
-prefer a standalone HTML prototype served from the session folder.
+If the prototype needs the real application, use repository-native startup
+guidance and provide the exact prototype route. Otherwise, prefer a standalone
+HTML prototype served from the session folder.
 
 For a non-visual technical spike, present the runnable command and a short
 result view that shows the evidence for the disputed constraint. Do not ask the
