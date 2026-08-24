@@ -1,7 +1,8 @@
 # Copilot plugins
 
 This repository is a Copilot CLI plugin marketplace named
-`fyllut-sendinn-plugins`. It currently publishes the `chores` plugin.
+`fyllut-sendinn-plugins`. It publishes the `chores` and `specification`
+plugins.
 
 ## Local development
 
@@ -9,13 +10,14 @@ Install the plugin directly while developing it:
 
 ```sh
 copilot plugin install ./plugins/chores
+copilot plugin install ./plugins/specification
 ```
 
 Local plugin installs are cached. Run the same command again after changing the
 plugin, then verify the skill in an interactive session:
 
 ```text
-/skills info dependency-upgrade-stack
+/skills info fyllut-sendinn-specification
 ```
 
 ## Install in another repository
@@ -33,7 +35,8 @@ Add `.github/copilot/settings.json` to the consuming repository:
     }
   },
   "enabledPlugins": {
-    "chores@fyllut-sendinn-plugins": true
+    "chores@fyllut-sendinn-plugins": true,
+    "specification@fyllut-sendinn-plugins": true
   }
 }
 ```
@@ -47,6 +50,7 @@ The equivalent manual setup is:
 ```sh
 copilot plugin marketplace add navikt/fyllut-sendinn-local-dev-env
 copilot plugin install chores@fyllut-sendinn-plugins
+copilot plugin install specification@fyllut-sendinn-plugins
 ```
 
 ## Automatic updates
@@ -78,7 +82,9 @@ To update manually:
 
 ```sh
 copilot plugin update chores@fyllut-sendinn-plugins
+copilot plugin update specification@fyllut-sendinn-plugins
 ```
 
-When publishing a change, increment the version in both
-`plugins/chores/plugin.json` and `.github/plugin/marketplace.json`.
+When publishing a plugin change, increment the version in its `plugin.json`
+and matching marketplace entry. Also increment the marketplace metadata
+version.
