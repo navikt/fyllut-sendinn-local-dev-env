@@ -12,17 +12,37 @@ NAV recommends [cplt](https://github.com/navikt/cplt) for running agents in a sa
    sbx secret set -g github -t "$(gh auth token)"
    ```
 
-3. Build and load the custom Copilot image from the repository root:
-
-   ```sh
-   mise run sandbox:build
-   ```
-
 The image extends Docker's [Copilot template](https://docs.docker.com/ai/sandboxes/customize/templates/) with a nested Docker engine, Cypress dependencies, and [mise](https://mise.jdx.dev/) for managing project-specific tool versions.
 
-## GitHub Packages
+## Development in this repository
 
-Before creating the sandbox, configure a GitHub token with `read:packages` access. Remove `--sandbox innsending` to share the secret with all sandboxes.
+First, build and load the custom Copilot image from the repository root:
+
+```sh
+mise run sandbox:build
+```
+
+Start a sandbox:
+
+```sh
+mise run sandbox:run
+```
+
+Or you can pass `--name` to choose a sandbox name:
+
+```sh
+mise run sandbox:run --name innsending
+```
+
+Validate the kit after making changes:
+
+```sh
+mise run sandbox:validate
+```
+
+## GitHub Packages access
+
+Before creating the sandbox, configure a GitHub token with `read:packages` access. Running this command is necessary if you need access to download @navikt npm packages. Remove `--sandbox innsending` to share the secret with all sandboxes. 
 
 ```sh
 read -s PACKAGE_TOKEN
