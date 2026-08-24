@@ -42,17 +42,7 @@ From the workspace containing the checked-out repositories, use either the kit o
 
 The kit uses the custom image and includes the required network policy:
 
-```sh
-mise run sandbox:run
-```
-
-Pass `--name` to choose a sandbox name:
-
-```sh
-mise run sandbox:run --name innsending
-```
-
-Alternatively, allow kits from the NAV GitHub organization and create the sandbox directly from the kit's Git URL:
+Allow kits from the NAV GitHub organization and create the sandbox directly from the kit's Git URL:
 
 ```sh
 sbx settings set kit.allowedSources '["docker.io/","github.com/navikt/"]'
@@ -70,13 +60,7 @@ sbx run innsending-copilot --name ws1
 
 The agent name remains `innsending-copilot` because kits cannot override the built-in `copilot` agent. Local kits require `kit.allowLocalKits` to be `true`, which is the default.
 
-Validate the kit after making changes:
-
-```sh
-mise run sandbox:validate
-```
-
-### Manual setup
+### Manual setup (without kit)
 
 ```sh
 sbx run copilot -t innsending-sbx-copilot:latest
