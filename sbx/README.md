@@ -11,16 +11,15 @@ NAV recommends [cplt](https://github.com/navikt/cplt) for running agents in a sa
    sbx login
    sbx secret set -g github -t "$(gh auth token)"
    ```
+3. Build and load the custom Copilot image from the repository root, making our sandbox docker image available locally.
+
+   ```sh
+   mise run sandbox:build
+   ```
 
 The image extends Docker's [Copilot template](https://docs.docker.com/ai/sandboxes/customize/templates/) with a nested Docker engine, Cypress dependencies, and [mise](https://mise.jdx.dev/) for managing project-specific tool versions.
 
 ## Development in this repository
-
-First, build and load the custom Copilot image from the repository root:
-
-```sh
-mise run sandbox:build
-```
 
 Start a sandbox:
 

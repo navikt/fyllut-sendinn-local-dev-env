@@ -23,6 +23,11 @@ sandbox:
   #   docker build -f sbx/templates/Dockerfile.sbx-copilot sbx/templates -t innsending-sbx-copilot
   image: "innsending-sbx-copilot:latest"
 
+setup:
+  startup:
+    - command: ["bash", "-c", "gh extension list | grep -q 'github/gh-stack' || gh extension install github/gh-stack || true"]
+    - command: ["bash", "-c", "gh extension upgrade --all"]
+
 permissions:
   network:
     allow:

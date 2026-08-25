@@ -19,8 +19,6 @@ RUN apt-get update && apt-get install -y \
 
 USER agent
 
-RUN gh extension install github/gh-stack
-
 RUN curl https://mise.run | sh
 
 ENV PATH="/home/agent/.local/bin:/home/agent/.local/share/mise/shims:${PATH}"
