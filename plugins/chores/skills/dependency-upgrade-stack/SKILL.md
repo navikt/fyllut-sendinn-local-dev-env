@@ -95,6 +95,31 @@ Close a bot PR only after the passing replacement stack covers its complete depe
 
 Never close an unrelated or partly superseded bot PR. A grouped bot PR remains useful when the stack upgrades only some of its dependencies.
 
+Perform the final bot PR assessment against the lockfile and manifests at the
+top of the passing stack, not against `main` or an earlier stack layer.
+
+For every open bot PR:
+
+1. Inspect its manifest and lockfile diff. Record every direct dependency,
+   transitive dependency, action, image, runtime, and ancestor dependency that
+   it changes.
+2. Trace lockfile updates by dependency path and ancestry, not by package name
+   alone. The same package may remain at an older version under an unrelated
+   dependency tree.
+3. Mark a changed item as covered when the top stack has an equal or newer
+   eligible version at the corresponding path, or when an ancestor upgrade
+   removes that dependency path entirely.
+4. Mark the PR as partly superseded when any changed item remains below its
+   requested version or was intentionally deferred. Keep that PR open.
+5. After all stack checks pass, re-query open bot PRs and close every PR whose
+   complete set of changed items is covered. Include transitive-only and
+   security update PRs; do not limit cleanup to direct dependencies.
+
+Do not treat a lower version elsewhere in the lockfile as evidence that the bot
+PR is still needed when the exact dependency path it targeted no longer exists.
+Conversely, do not close a grouped PR merely because its direct ancestor was
+upgraded if one of its requested transitive updates is still missing.
+
 ## Finish
 
 Verify stack order and PR bases with `gh stack view` and GitHub PR data. Confirm every required check passes.
