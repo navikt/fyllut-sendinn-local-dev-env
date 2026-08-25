@@ -9,6 +9,7 @@ Install the plugin directly while developing it:
 
 ```sh
 copilot plugin install ./plugins/chores
+copilot plugin install ./plugins/specification
 ```
 
 Local plugin installs are cached. Run the same command again after changing the
@@ -47,6 +48,7 @@ The equivalent manual setup is:
 ```sh
 copilot plugin marketplace add navikt/fyllut-sendinn-local-dev-env
 copilot plugin install chores@fyllut-sendinn-plugins
+copilot plugin install specification@fyllut-sendinn-plugins
 ```
 
 ## Automatic updates
@@ -78,6 +80,7 @@ To update manually:
 
 ```sh
 copilot plugin update chores@fyllut-sendinn-plugins
+copilot plugin update specification@fyllut-sendinn-plugins
 ```
 
 When publishing a change, increment the version in both
