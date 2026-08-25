@@ -20,26 +20,35 @@ Keep the modes separate. Both use the workflow below.
 
 ## Start
 
-Ask one question at a time with `ask_user`.
+Use `ask_user` for discovery. Ask questions in rounds, not as a long
+one-question-at-a-time sequence.
 
-1. **Choose the mode.** Always ask whether the user wants a functional or
-   technical specification, even when the prompt suggests one.
-2. **Get the topic.** If no change or problem was provided, ask:
+1. **Open the first round.** Always ask whether the user wants a functional or
+   technical specification, even when the prompt suggests one. If no change or
+   problem was provided, include a separate field asking:
 
    > What would you like to specify? A rough description is enough.
 
-3. **Frame the work.** Investigate the current state, then summarize the
+2. **Frame the work.** Investigate the current state, then summarize the
    problem, outcome, and boundary. Ask the user to correct the framing.
 
 ## Discovery method
 
+- **Map a decision tree.** Track which decisions depend on other decisions.
+  The frontier is every unresolved decision whose prerequisites are settled.
+- **Ask the whole frontier.** Put all current frontier questions in one
+  `ask_user` form. Use one field per decision and number questions continuously
+  across rounds. Ask a single question only when the frontier contains one
+  decision.
+- **Keep dependencies between rounds.** If Q5 depends on Q2, do not include Q5
+  in the same round as Q2. Recompute the frontier after every response.
 - **Find facts; ask for decisions.** Read documentation, code, tests, current
   behavior, terminology, issue conventions, and prior art. Do not ask the user
-  for facts available through tools.
-- **Follow dependencies.** Ask only a decision whose prerequisites are settled.
-  Reassess the remaining questions after each answer.
-- **Ask one decision at a time.** Number questions continuously. Do not combine
-  decisions in one field.
+  for facts available through tools. If research is still running, continue
+  with independent frontier questions and hold only the questions that depend
+  on that research.
+- **Keep fields focused.** Each field must contain one decision. Do not combine
+  unrelated choices just because they are asked in the same round.
 - **Give a recommendation.** State a preferred option and a short reason. It is
   advice, not an assumed answer.
 - **Accept uncertainty.** "I don't know" is valid. If research, a prototype,
@@ -52,16 +61,18 @@ Ask one question at a time with `ask_user`.
 - **Track status.** Separate verified facts, confirmed decisions, accepted
   assumptions with risks, and open questions.
 
-Use this question format:
+Use this field format:
 
 ```md
-**Question Q<n> — <title>**
-<Why the decision matters.>
+Q<n> — <title>
 
-**Recommendation:** <choice and reason>
+<Why the decision matters.>
+Recommendation: <choice and reason>
 ```
 
-Do not draft while a blocking question remains.
+The interview is complete when the frontier is empty: every relevant branch
+has been visited and no decision remains silently assumed. Confirm shared
+understanding before drafting. Do not draft while a blocking question remains.
 
 ## Writing standard
 

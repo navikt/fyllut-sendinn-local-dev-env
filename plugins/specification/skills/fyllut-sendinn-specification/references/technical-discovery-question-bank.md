@@ -1,9 +1,10 @@
 # Technical specification discovery question bank
 
 Use this selectively after the functional basis and technical boundary are
-known. Investigate repository facts before asking the developer. Ask one
-decision at a time and explain the relevant trade-off. Apply defaults from the
-relevant development skill without asking the user to choose them.
+known. Investigate repository facts before asking the developer. Ask the whole
+current frontier in one round, with one decision per field, and explain each
+relevant trade-off. Apply defaults from the relevant development skill without
+asking the user to choose them.
 
 ## Current state and boundaries
 

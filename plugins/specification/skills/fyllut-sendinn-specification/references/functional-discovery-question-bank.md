@@ -1,9 +1,10 @@
 # Functional specification discovery question bank
 
-Use this as a question bank, not a questionnaire to send wholesale. Ask one
-focused question at a time. Ask only decisions whose prerequisites are settled,
-and investigate facts that can be established from the repository or other
-reliable sources.
+Use this as a question bank, not a questionnaire to send wholesale. Select the
+whole current frontier: every relevant decision whose prerequisites are
+settled. Ask those decisions together in one round, with one focused field per
+decision. Investigate facts that can be established from the repository or
+other reliable sources.
 
 Phrase every question in plain product language for a functional architect or
 designer. When a request starts with a proposed technical solution, discover
