@@ -11,7 +11,7 @@
     {
       "name": "chores",
       "description": "Demo maintenance helpers for routine repository chores.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "plugins/chores"
     },
     {
