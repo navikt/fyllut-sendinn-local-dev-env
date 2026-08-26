@@ -29,6 +29,11 @@ one-question-at-a-time sequence.
 
    > What would you like to specify? A rough description is enough.
 
+   Make the mode field required and use a single-select enum with exactly two
+   choices: **Functional specification** and **Technical specification**. Do
+   not offer an "unsure", "other", or any third mode. Recommend the better fit
+   when the prompt provides enough context.
+
 2. **Frame the work.** Investigate the current state, then summarize the
    problem, outcome, and boundary. Ask the user to correct the framing.
 
@@ -49,6 +54,9 @@ one-question-at-a-time sequence.
   on that research.
 - **Keep fields focused.** Each field must contain one decision. Do not combine
   unrelated choices just because they are asked in the same round.
+- **Keep questions concise.** Use a short title, one brief sentence explaining
+  why the decision matters, and a short recommendation. Omit context already
+  established in the conversation or available in the repository.
 - **Give a recommendation.** State a preferred option and a short reason. It is
   advice, not an assumed answer.
 - **Accept uncertainty.** "I don't know" is valid. If research, a prototype,

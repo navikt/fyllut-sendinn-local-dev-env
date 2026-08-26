@@ -1,1 +1,7 @@
+# editors
+.idea/
+*.iml
+.vscode/
+
+#misc
 *.tar
