@@ -44,6 +44,7 @@ permissions:
       - mise-versions.jdx.dev
       - nodejs.org
       - api.adoptium.net
+      - download.java.net
 
       # --- npm ---
       - "**.npmjs.org"
