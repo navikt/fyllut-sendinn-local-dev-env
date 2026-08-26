@@ -46,16 +46,18 @@ permissions:
       - api.adoptium.net
 
       # --- npm ---
-      - registry.npmjs.org
+      - "**.npmjs.org"
       # Private Nav packages (for example fnrvalidator). Requires NODE_AUTH_TOKEN:
       #   sbx secret set-custom --sandbox <name> --host npm.pkg.github.com \
       #     --env NODE_AUTH_TOKEN --value "$PACKAGE_TOKEN"
       - npm.pkg.github.com
 
       # --- Cypress ---
-      - download.cypress.io
-      - cdn.cypress.io
+      - "**.cypress.io"
 
       # --- Nav design system / runtime assets pulled by the frontends ---
-      - cdn.nav.no
-      - www.nav.no
+      - "**.nav.no"
+
+      # --- React / Next.js ---
+      - react.dev
+      - nextjs.org
