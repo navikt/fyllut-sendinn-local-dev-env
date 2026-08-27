@@ -28,6 +28,7 @@ If the `unslop` skill is available, invoke it before writing branch names, commi
 - Query the package registry or upstream releases for the latest stable version available now. Do not rely on a version suggested in an issue, chat message, or bot PR.
 - Exclude snapshots, release candidates, milestones, betas, and alphas unless the user asks for them.
 - Only select a version whose release timestamp is more than seven full days old. Record the timestamp and source. If the newest stable release is too recent, use the newest eligible stable release.
+- Exempt a stable release from the seven-day wait when it fixes a published CVE. Verify that the release fixes the CVE from an authoritative release note or security advisory, then record the CVE, release timestamp, and source.
 - Do not upgrade to a Node.js major until it has entered Long-Term Support according to the official Node.js release schedule. Exclude majors whose status is `Current`, even when they pass the seven-day rule. Record the status and source.
 - Keep lockfiles, generated files, checksums, and dependency metadata in sync.
 - Use package manager commands when they produce reliable edits. Review every resulting diff.
@@ -46,7 +47,7 @@ Confirm:
 4. Existing build, test, lint, generated-code, and integration commands.
 5. Runtime, plugin, peer dependency, and platform compatibility for the requested target.
 
-Record each selected dependency's current version, newest eligible stable version, release timestamp, timestamp source, update type, and expected risk. Also record newer versions excluded by the seven-day wait period.
+Record each selected dependency's current version, newest eligible stable version, release timestamp, timestamp source, update type, and expected risk. Also record newer versions excluded by the seven-day wait period and any CVE-fixing versions exempted from it.
 
 ## Find the target version
 
@@ -120,6 +121,7 @@ Report:
 - migration risks and decisions
 - local and GitHub check results
 - versions deferred by the seven-day rule
+- CVE-fixing versions exempted from the seven-day rule, including the CVE identifiers
 - a Node.js major deferred because it has not entered LTS, when applicable
 
 End with the direct GitHub PR link.
