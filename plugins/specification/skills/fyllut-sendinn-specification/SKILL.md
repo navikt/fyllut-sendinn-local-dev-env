@@ -92,6 +92,8 @@ Write for people who need to understand and act quickly.
 - Use bullets and tables only when they improve scanning.
 - Do not repeat a point unless repetition adds useful traceability.
 - Do not invent benefits, risks, or requirements to fill a section.
+- Leave out contracts, projections, and models with no consumer in the current
+  scope.
 - Avoid filler such as "seamless", "robust", "flexible", "intuitive",
   "appropriate", "comprehensive", "leverage", and "best practice".
 - Use "Not applicable" with a short reason when a required section does not
@@ -257,6 +259,8 @@ Draft when:
 
 - the functional basis and technical goal are clear;
 - current state, boundaries, and dependencies are verified;
+- concurrent work and the existing or in-flight contracts to reuse are
+  identified, and overlapping contract ownership is resolved;
 - normal processing, failures, retries, and recovery are designed;
 - compatibility, migration, security, privacy, and operations are resolved or
   marked not applicable;
@@ -280,6 +284,11 @@ effect is missing.
 
 ## Current state
 <Verified design, constraints, and prior art.>
+
+## Concurrent work
+- <In-flight branch or specification touching the same package or contract.>
+- <Existing or in-flight definition to reuse.>
+- <Taxonomy, validator, or error model not to duplicate.>
 
 ## Scope
 ### Included
@@ -312,12 +321,17 @@ effect is missing.
 
 ## Security and privacy
 - <Requirement or not-applicable reason.>
+- <For each verified identity, what it replaces and what it must not replace;
+  separate the actor from the subject or resource.>
 
 ## Observability and operations
 - <Signal, alert, owner, or not-applicable reason.>
 
 ## Migration and compatibility
 - <Rollout, compatibility, rollback, or not-applicable reason.>
+- <For replaced extraction or mapping, currently accepted values that remain
+  accepted, including optional fields, fallback chains, and unvalidated
+  pass-through values. Treat first-time validation as a behavior change.>
 
 ## Testing strategy
 | Seam | Behavior proved | Test level |
@@ -332,10 +346,19 @@ effect is missing.
 - **Non-blocking question:** <Decision, owner, and deadline.>
 
 ## Technical acceptance criteria
-- [ ] **TAC-1 (TD-1):** <Design or compatibility outcome.>
+- [ ] **TAC-1 (TD-1):** <Compatibility outcome proved by unchanged artifact.>
 - [ ] **TAC-2 (Failure):** <Failure and recovery outcome.>
 - [ ] **TAC-3 (Operations):** <Operational outcome.>
 ```
+
+When the design enumerates a fixed set of valid combinations, prefer a
+representation that cannot construct an invalid combination. Record a decision
+to validate combinations at runtime, with its trade-off, in **Decisions and
+alternatives**.
+
+A compatibility criterion must name the artifact that proves it and state that
+the artifact must not change. Changing a test input or expectation is a
+behavior change, not a way to satisfy the criterion.
 
 Specify enough to guide implementation without listing every code edit.
 

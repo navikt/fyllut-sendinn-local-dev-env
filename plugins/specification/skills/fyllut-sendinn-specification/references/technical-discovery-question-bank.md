@@ -12,6 +12,9 @@ asking the user to choose them.
   the responsibility, and why?
 - What current behavior or contract must remain compatible?
 - Is there an existing abstraction or integration that should be reused?
+- Which in-flight branches or specifications touch the same packages or
+  contracts, and which definitions must this design reuse rather than
+  duplicate?
 - Does the proposal deepen an existing module or create a competing path?
 - Which upstream and downstream consumers are affected?
 - What is deliberately unchanged?
@@ -70,6 +73,9 @@ asking the user to choose them.
 ## Alternatives and decisions
 
 - What is the simplest viable design consistent with repository direction?
+- If valid combinations are fixed, can the design make invalid combinations
+  impossible to construct? If not, what runtime-validation trade-off is
+  accepted?
 - Which meaningful alternative was rejected, and why?
 - Is the decision hard to reverse or expensive to change later?
 - Which assumption carries the greatest implementation or operational risk?
