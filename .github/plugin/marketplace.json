@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Copilot plugins maintained in fyllut-sendinn-local-dev-env.",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "plugins": [
     {
@@ -19,6 +19,12 @@
       "description": "Shared functional and technical specification workflow for Fyllut-Sendinn repositories.",
       "version": "0.2.1",
       "source": "plugins/specification"
+    },
+    {
+      "name": "devx",
+      "description": "Developer experience helpers for writing and committing changes.",
+      "version": "0.1.0",
+      "source": "plugins/devx"
     }
   ]
 }
