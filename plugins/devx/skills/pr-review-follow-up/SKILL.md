@@ -1,12 +1,12 @@
 ---
-name: github-pr-review-follow-up
+name: pr-review-follow-up
 description: Work through recent GitHub pull request review comments with the user, decide how to handle each one, then implement, commit, push, reply, and resolve the agreed follow-ups. Use when the user provides a pull request and wants to address review feedback collaboratively.
 license: MIT
 metadata:
   version: "1.0.0"
 ---
 
-# Follow up GitHub pull request reviews
+# Follow up pull request reviews
 
 Read every relevant review comment, discuss them with the user one at a time,
 and change the pull request only after the user confirms the complete plan.
