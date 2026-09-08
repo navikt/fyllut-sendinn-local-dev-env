@@ -2,8 +2,9 @@
 
 set -euo pipefail
 
-readonly image_repository="europe-north1-docker.pkg.dev/nais-management-233d/skjemadigitalisering/skjemabygging-formio-fyllut-base"
-readonly limit="${1:-10}"
+readonly limit="${1:-5}"
+readonly repository="navikt/skjemabygging-formio"
+readonly workflow="build-and-test.yaml"
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 plugin_repository="$(git -C "$script_dir" rev-parse --show-toplevel)"
@@ -13,16 +14,27 @@ git -C "$source_repository" fetch origin main
 
 git -C "$source_repository" log origin/main "-${limit}" --format='%H' |
   while read -r sha; do
-    image="${image_repository}:${sha}"
+    if ! run_status="$(gh run list \
+      --repo "$repository" \
+      --workflow "$workflow" \
+      --branch main \
+      --commit "$sha" \
+      --status completed \
+      --json conclusion \
+      --jq 'any(.[]; .conclusion == "success")')"; then
+      printf 'Could not check the build workflow for %s. Check GitHub access and stop.\n' \
+        "$sha" >&2
+      exit 1
+    fi
 
-    if manifest_error="$(docker manifest inspect "$image" 2>&1)"; then
+    if [ "$run_status" = true ]; then
       git -C "$source_repository" show -s \
         --pretty=format:'%H%n%ad%n%an%n%s%n' --date=short "$sha"
-    elif grep -Eqi 'manifest unknown|no such manifest|not found' <<<"$manifest_error"; then
-      printf 'Skipping %s because its fyllut-base image does not exist.\n' "$sha" >&2
+    elif [ "$run_status" = false ]; then
+      printf 'Skipping %s because build-and-test.yaml has no successful run.\n' "$sha" >&2
     else
-      printf 'Could not check %s. Check registry access and stop.\n%s\n' \
-        "$image" "$manifest_error" >&2
+      printf 'Could not determine build status for %s. Check GitHub access and stop.\n' \
+        "$sha" >&2
       exit 1
     fi
   done

@@ -21,21 +21,21 @@ Run the commands from the `ws-innsending` workspace root.
    git -C skjemabygging-formio fetch origin main
    ```
 
-2. List the latest ten commits that have a published production `fyllut-base`
-   image:
+2. List the latest five commits whose `build-and-test.yaml` workflow completed
+   successfully:
 
    ```bash
    plugins/devx/skills/release-fyllut/scripts/list-releasable-fyllut-commits.sh
    ```
 
-   The script checks
-   `europe-north1-docker.pkg.dev/nais-management-233d/skjemadigitalisering/skjemabygging-formio-fyllut-base:<full-sha>`
-   for each candidate. It omits missing images and exits with an error if it
-   cannot access the registry.
+   The script checks each of the five newest `main` commits for a successful,
+   completed `build-and-test.yaml` run in `navikt/skjemabygging-formio`. That
+   workflow builds the `fyllut-base` image. It omits commits without a
+   successful run and exits with an error if it cannot access GitHub.
 
 3. Present the script's output and ask the user to confirm one. Do not offer
-   commits without an image. Do not dispatch the workflow until the user
-   confirms the selected full 40-character SHA.
+   commits without a successful build. Do not dispatch the workflow until the
+   user confirms the selected full 40-character SHA.
 
 ## Dispatch the release
 
