@@ -40,6 +40,33 @@ that the target branch exists before dispatching:
 gh api "repos/navikt/skjemautfylling-formio/git/ref/heads/<target-branch>"
 ```
 
+Read the currently published monorepo commit from that branch:
+
+```bash
+gh api "repos/navikt/skjemautfylling-formio/contents/MONOREPO?ref=<target-branch>" \
+  --jq .content | base64 --decode
+```
+
+Compare the returned full SHA with the selected commit before dispatching:
+
+- If they match, report that the branch already references the selected commit.
+  Do not dispatch the workflow.
+- If the current `MONOREPO` commit is a descendant of the selected commit, the
+  selected commit is older. Give an explicit rollback warning that includes both
+  full SHAs, and ask the user to confirm the rollback before dispatching.
+- If Git cannot compare the two commits, tell the user that their order is
+  unknown. Do not describe it as a rollback.
+
+Use Git ancestry to determine whether the selected commit is older:
+
+```bash
+git -C skjemabygging-formio merge-base --is-ancestor \
+  <selected-full-sha> <current-monorepo-full-sha>
+```
+
+This command exits successfully when the current `MONOREPO` commit is newer
+than the selected commit. Skip this comparison when the SHAs already match.
+
 Dispatch the workflow with the selected full SHA. The workflow must run from the
 target branch so its generated commit is pushed there:
 
