@@ -2,7 +2,8 @@
 
 set -euo pipefail
 
-readonly limit="${1:-5}"
+readonly target_count="${1:-5}"
+readonly scan_limit=25
 readonly repository="navikt/skjemabygging-formio"
 readonly workflow="build-and-test.yaml"
 
@@ -12,29 +13,35 @@ source_repository="$(dirname "$plugin_repository")/skjemabygging-formio"
 
 git -C "$source_repository" fetch origin main
 
-git -C "$source_repository" log origin/main "-${limit}" --format='%H' |
-  while read -r sha; do
-    if ! run_status="$(gh run list \
-      --repo "$repository" \
-      --workflow "$workflow" \
-      --branch main \
-      --commit "$sha" \
-      --status completed \
-      --json conclusion \
-      --jq 'any(.[]; .conclusion == "success")')"; then
-      printf 'Could not check the build workflow for %s. Check GitHub access and stop.\n' \
-        "$sha" >&2
-      exit 1
-    fi
+listed_count=0
 
-    if [ "$run_status" = true ]; then
-      git -C "$source_repository" show -s \
-        --pretty=format:'%H%n%ad%n%an%n%s%n' --date=short "$sha"
-    elif [ "$run_status" = false ]; then
-      printf 'Skipping %s because build-and-test.yaml has no successful run.\n' "$sha" >&2
-    else
-      printf 'Could not determine build status for %s. Check GitHub access and stop.\n' \
-        "$sha" >&2
-      exit 1
+while read -r sha; do
+  if ! run_status="$(gh run list \
+    --repo "$repository" \
+    --workflow "$workflow" \
+    --branch main \
+    --commit "$sha" \
+    --status completed \
+    --json conclusion \
+    --jq 'any(.[]; .conclusion == "success")')"; then
+    printf 'Could not check the build workflow for %s. Check GitHub access and stop.\n' \
+      "$sha" >&2
+    exit 1
+  fi
+
+  if [ "$run_status" = true ]; then
+    git -C "$source_repository" show -s \
+      --pretty=format:'%H%n%ad%n%an%n%s%n' --date=short "$sha"
+    listed_count=$((listed_count + 1))
+
+    if [ "$listed_count" -eq "$target_count" ]; then
+      break
     fi
-  done
+  elif [ "$run_status" = false ]; then
+    printf 'Skipping %s because build-and-test.yaml has no successful run.\n' "$sha" >&2
+  else
+    printf 'Could not determine build status for %s. Check GitHub access and stop.\n' \
+      "$sha" >&2
+    exit 1
+  fi
+done < <(git -C "$source_repository" log origin/main "-${scan_limit}" --format='%H')
