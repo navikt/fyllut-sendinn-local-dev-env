@@ -1,11 +1,11 @@
 {
   "name": "devx",
-  "description": "Developer experience helpers for writing, commits, and pull request follow-up.",
-  "version": "0.2.0",
+  "description": "Developer experience helpers for writing, commits, pull request follow-up, and releases.",
+  "version": "0.3.0",
   "author": {
     "name": "NAV"
   },
   "repository": "https://github.com/navikt/fyllut-sendinn-local-dev-env",
-  "keywords": ["developer-experience", "writing", "commits", "pull-requests", "reviews"],
+  "keywords": ["developer-experience", "writing", "commits", "pull-requests", "reviews", "releases"],
   "skills": "skills/"
 }
