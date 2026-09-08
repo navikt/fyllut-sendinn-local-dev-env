@@ -1,6 +1,7 @@
 ---
 name: release-fyllut
 description: Release a selected skjemabygging-formio main commit to skjemautfylling-formio. Use when publishing or propagating the FyllUt monorepo reference.
+disable-model-invocation: true
 license: MIT
 metadata:
   version: "1.0.0"
