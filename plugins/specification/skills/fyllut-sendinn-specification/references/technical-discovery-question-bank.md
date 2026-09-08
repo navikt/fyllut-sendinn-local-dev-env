@@ -16,6 +16,10 @@ asking the user to choose them.
   contracts, and which definitions must this design reuse rather than
   duplicate?
 - Does the proposal deepen an existing module or create a competing path?
+- Which layer is shared: semantics, source data, lookup, resolver,
+  mapping, service, or UI behavior?
+- Are source-of-truth data, lookup context, presentation state, and target
+  contracts being kept separate?
 - Which upstream and downstream consumers are affected?
 - What is deliberately unchanged?
 
@@ -23,6 +27,9 @@ asking the user to choose them.
 
 - What inputs, outputs, errors, and guarantees cross each boundary?
 - Which system owns each piece of data and its lifecycle?
+- Which consumer needs each field in a proposed shared model?
+- Which layer owns and enforces each validation rule: frontend collection,
+  application boundary, or downstream domain service?
 - Are ordering, idempotency, concurrency, or consistency guarantees required?
 - How are invalid, missing, stale, duplicated, or conflicting inputs handled?
 - Does data require migration, retention, deletion, encryption, or audit?
@@ -66,6 +73,9 @@ asking the user to choose them.
 
 - Can the change be introduced incrementally while keeping the system working?
 - Is expand-contract, backfill, dual-read, dual-write, or versioning needed?
+- For a framework or runtime replacement, which definitions, persisted data,
+  integrations, and application behaviors are replaced, adapted, migrated, or
+  unchanged?
 - How are existing forms, drafts, submissions, or integrations affected?
 - What feature gating or staged rollout is required?
 - What is the rollback point, and what state remains after rollback?

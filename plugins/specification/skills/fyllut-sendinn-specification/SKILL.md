@@ -242,6 +242,22 @@ Verify the current design, package direction, dependencies, interfaces,
 operational constraints, nearby tests, and prior art. Confirm the proposed
 technical boundary before detailed questions.
 
+- Separate the source of truth, lookup or context source, presentation state,
+  and target contracts before choosing a shared boundary. Current lookup usage
+  does not by itself make an artifact part of the shared contract.
+- Name the consumer for every field in a proposed shared model. Leave
+  display-only data in its current source of truth when no target consumer
+  needs it.
+- State exactly which layer is shared: semantics, source data, lookup,
+  resolver, mapping, service, or UI behavior. Do not require existing flows to
+  share a broader layer when sharing a narrower one meets the goal.
+- Separate framework or runtime replacement from migration of definitions,
+  persisted data, integrations, and application behavior. State which
+  dimensions are replaced, adapted, migrated, or unchanged.
+- Name the owner and enforcement point for each validation rule. Distinguish
+  user-facing collection validation, application-boundary parsing and
+  security, and downstream domain acceptance.
+
 Use the
 [technical discovery question bank](references/technical-discovery-question-bank.md)
 selectively. Ask developers to choose trade-offs, not report facts available in
