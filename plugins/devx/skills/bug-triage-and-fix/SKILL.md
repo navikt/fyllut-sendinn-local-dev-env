@@ -1,6 +1,6 @@
 ---
 name: bug-triage-and-fix
-description: Trace a suspected bug from evidence to root cause, file a detailed GitHub issue, implement and prove the fix, then publish a pull request. Use when a bug report needs investigation and delivery rather than a speculative patch.
+description: Trace a suspected bug from evidence to root cause, optionally file a detailed GitHub issue, implement and prove the fix, then publish a pull request. Use when a bug report needs investigation and delivery rather than a speculative patch.
 license: MIT
 metadata:
   version: "1.0.0"
@@ -10,6 +10,12 @@ metadata:
 
 Own the path from the first symptom to a reviewable pull request. Keep confirmed
 facts separate from hypotheses, and do not patch around an unexplained failure.
+
+## Decide whether to file an issue
+
+If the user does not say whether to create a GitHub issue, ask right away
+whether they want to track the bug in an issue or want a fix on a feature branch
+without an issue. Do not start the investigation until they answer.
 
 ## Investigate
 
@@ -26,10 +32,11 @@ facts separate from hypotheses, and do not patch around an unexplained failure.
    invalid input correctly.
 6. Write concrete reproduction steps before choosing a fix.
 
-## File the issue
+## File the issue when requested
 
-Search open and closed issues first. File the issue in the repository that owns
-the faulty behavior, not merely where the error was logged.
+If the user wants an issue, search open and closed issues first. File it in the
+repository that owns the faulty behavior, not merely where the error was
+logged.
 
 Include:
 
@@ -41,6 +48,9 @@ Include:
 - suggested solution and regression coverage
 
 Do not paste complete source files or claim that absent log data proves a fact.
+
+After identifying the root cause and filing the issue, explain the findings and
+suggested fix to the user. Wait for their confirmation before writing code.
 
 ## Implement and prove the fix
 
@@ -63,11 +73,15 @@ Do not paste complete source files or claim that absent log data proves a fact.
 1. Review the complete diff for races, false-positive tests, shared-flow gaps,
    and unrelated changes. Use a read-only reviewer when available.
 2. Fix review findings in a new commit. Re-run affected checks.
-3. Create conventional commits with required trailers, push the feature branch,
-   and open a pull request against the intended base branch.
-4. Put `Closes #NUMBER` in the pull request body. Explain the cause, behavior
-   change, red-before-green proof, and validation commands.
-5. Verify the remote branch, pull request body, target branch, linked issue, and
+3. After the fix passes its tests and you verify the behavior, create
+   conventional commits with required trailers, push the feature branch, and
+   open a pull request against `main` unless the user specifies another base
+   branch.
+4. If an issue exists, put `Closes #NUMBER` in the pull request body. Explain
+   the cause, behavior change, red-before-green proof, and validation commands.
+5. Watch the pull request until all checks pass. Fix failures, push the changes,
+   and repeat until the checks are green.
+6. Verify the remote branch, pull request body, target branch, linked issue, and
    repository status before reporting completion.
 
 Finish with the issue and pull request links, commit SHAs, regression failure,
