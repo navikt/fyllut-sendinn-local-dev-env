@@ -31,6 +31,15 @@ without an issue. Do not start the investigation until they answer.
    proves, what it only suggests, and whether the receiving service is rejecting
    invalid input correctly.
 6. Write concrete reproduction steps before choosing a fix.
+7. Verify the reported failure before committing to a fix. Report whether the
+   bug is confirmed, cannot be reproduced, or needs more detail. For a
+   confirmed bug, name the code path that causes it.
+
+## Handle incomplete reports
+
+If the available evidence cannot confirm the bug, ask focused, actionable
+questions. Record what is established and what still needs an answer so that
+later investigation does not repeat work.
 
 ## File the issue when requested
 
@@ -51,6 +60,12 @@ Do not paste complete source files or claim that absent log data proves a fact.
 
 After identifying the root cause and filing the issue, explain the findings and
 suggested fix to the user. Wait for their confirmation before writing code.
+
+## Resume an existing issue
+
+Read its body, comments, and previous triage notes. Check for replies to
+unresolved questions, present the updated evidence, and do not ask again about
+facts already established.
 
 ## Implement and prove the fix
 
