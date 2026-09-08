@@ -22,8 +22,8 @@
     },
     {
       "name": "devx",
-      "description": "Developer experience helpers for writing and committing changes.",
-      "version": "0.1.0",
+      "description": "Developer experience helpers for writing, commits, and pull request follow-up.",
+      "version": "0.2.0",
       "source": "plugins/devx"
     }
   ]
