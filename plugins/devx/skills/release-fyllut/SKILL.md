@@ -21,32 +21,21 @@ Run the commands from the `ws-innsending` workspace root.
    git -C skjemabygging-formio fetch origin main
    ```
 
-2. Check the `fyllut-base` image for each of the ten newest commits. Use the
-   production image repository and the full commit SHA as the image tag:
+2. List the latest ten commits that have a published production `fyllut-base`
+   image:
 
    ```bash
-   IMAGE_REPOSITORY=europe-north1-docker.pkg.dev/nais-management-233d/skjemadigitalisering/skjemabygging-formio-fyllut-base
-
-   git -C skjemabygging-formio log origin/main -10 --format='%H' |
-     while read -r sha; do
-       image="${IMAGE_REPOSITORY}:${sha}"
-
-       if docker manifest inspect "$image" >/dev/null 2>&1; then
-         git -C skjemabygging-formio show -s \
-           --pretty=format:'%H%n%ad%n%an%n%s%n' --date=short "$sha"
-       elif docker manifest inspect "$image" 2>&1 |
-         grep -Eq 'manifest unknown|no such manifest|not found'; then
-         printf 'Skipping %s because its fyllut-base image does not exist.\n' "$sha" >&2
-       else
-         printf 'Could not check %s. Check registry access and stop.\n' "$image" >&2
-         exit 1
-       fi
-     done
+   plugins/devx/skills/release-fyllut/scripts/list-releasable-fyllut-commits.sh
    ```
 
-3. Present only the commits whose `fyllut-base` image exists and ask the user to
-   confirm one. Do not offer commits without an image. Do not dispatch the
-   workflow until the user confirms the selected full 40-character SHA.
+   The script checks
+   `europe-north1-docker.pkg.dev/nais-management-233d/skjemadigitalisering/skjemabygging-formio-fyllut-base:<full-sha>`
+   for each candidate. It omits missing images and exits with an error if it
+   cannot access the registry.
+
+3. Present the script's output and ask the user to confirm one. Do not offer
+   commits without an image. Do not dispatch the workflow until the user
+   confirms the selected full 40-character SHA.
 
 ## Dispatch the release
 
