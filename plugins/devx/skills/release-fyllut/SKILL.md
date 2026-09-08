@@ -21,7 +21,7 @@ Run the commands from the `ws-innsending` workspace root.
    git -C skjemabygging-formio fetch origin main
    ```
 
-2. Ask for the target branch before listing candidates. Use `main` unless the
+2. Ask for the target branch before listing candidates. Use `master` unless the
    user specifies another branch. List up to five recent commits whose
    `build-and-test.yaml` workflow completed successfully:
 
@@ -43,7 +43,7 @@ Run the commands from the `ws-innsending` workspace root.
 
 ## Dispatch the release
 
-Use `main` as the target branch unless the user specifies another branch. Confirm
+Use `master` as the target branch unless the user specifies another branch. Confirm
 that the target branch exists before dispatching:
 
 ```bash

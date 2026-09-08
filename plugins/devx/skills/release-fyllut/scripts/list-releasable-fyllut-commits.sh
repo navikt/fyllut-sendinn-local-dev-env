@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-readonly target_branch="${1:-main}"
+readonly target_branch="${1:-master}"
 readonly target_count=5
 readonly scan_limit=25
 readonly repository="navikt/skjemabygging-formio"
