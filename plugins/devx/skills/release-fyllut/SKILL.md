@@ -21,18 +21,21 @@ Run the commands from the `ws-innsending` workspace root.
    git -C skjemabygging-formio fetch origin main
    ```
 
-2. List up to five recent commits whose `build-and-test.yaml` workflow completed
-   successfully:
+2. Ask for the target branch before listing candidates. Use `main` unless the
+   user specifies another branch. List up to five recent commits whose
+   `build-and-test.yaml` workflow completed successfully:
 
    ```bash
-   plugins/devx/skills/release-fyllut/scripts/list-releasable-fyllut-commits.sh
+   plugins/devx/skills/release-fyllut/scripts/list-releasable-fyllut-commits.sh \
+     <target-branch>
    ```
 
    The script examines the 25 newest `main` commits and returns the five newest
    with a successful, completed `build-and-test.yaml` run in
    `navikt/skjemabygging-formio`. That workflow builds the `fyllut-base` image.
-   It omits commits without a successful run and exits with an error if it
-   cannot access GitHub.
+   It reads `MONOREPO` from the target branch first and marks the matching
+   candidate as currently deployed. It omits commits without a successful run
+   and exits with an error if it cannot access GitHub.
 
 3. Present the script's output and ask the user to confirm one. Do not offer
    commits without a successful build. Do not dispatch the workflow until the
