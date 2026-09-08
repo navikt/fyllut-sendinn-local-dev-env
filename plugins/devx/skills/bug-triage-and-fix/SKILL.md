@@ -45,7 +45,7 @@ later investigation does not repeat work.
 
 If the user wants an issue, search open and closed issues first. File it in the
 repository that owns the faulty behavior, not merely where the error was
-logged.
+logged. Apply the `bug` label when creating it.
 
 Include:
 
