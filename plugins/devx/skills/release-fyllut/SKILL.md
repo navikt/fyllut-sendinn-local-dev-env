@@ -21,15 +21,32 @@ Run the commands from the `ws-innsending` workspace root.
    git -C skjemabygging-formio fetch origin main
    ```
 
-2. List the ten newest commits from `origin/main`, including their full hashes:
+2. Check the `fyllut-base` image for each of the ten newest commits. Use the
+   production image repository and the full commit SHA as the image tag:
 
    ```bash
-   git -C skjemabygging-formio log origin/main -10 \
-     --pretty=format:'%H%n%ad%n%an%n%s%n' --date=short
+   IMAGE_REPOSITORY=europe-north1-docker.pkg.dev/nais-management-233d/skjemadigitalisering/skjemabygging-formio-fyllut-base
+
+   git -C skjemabygging-formio log origin/main -10 --format='%H' |
+     while read -r sha; do
+       image="${IMAGE_REPOSITORY}:${sha}"
+
+       if docker manifest inspect "$image" >/dev/null 2>&1; then
+         git -C skjemabygging-formio show -s \
+           --pretty=format:'%H%n%ad%n%an%n%s%n' --date=short "$sha"
+       elif docker manifest inspect "$image" 2>&1 |
+         grep -Eq 'manifest unknown|no such manifest|not found'; then
+         printf 'Skipping %s because its fyllut-base image does not exist.\n' "$sha" >&2
+       else
+         printf 'Could not check %s. Check registry access and stop.\n' "$image" >&2
+         exit 1
+       fi
+     done
    ```
 
-3. Present the commits clearly and ask the user to confirm one. Do not dispatch
-   the workflow until the user confirms the selected full 40-character SHA.
+3. Present only the commits whose `fyllut-base` image exists and ask the user to
+   confirm one. Do not offer commits without an image. Do not dispatch the
+   workflow until the user confirms the selected full 40-character SHA.
 
 ## Dispatch the release
 
