@@ -13,17 +13,24 @@ Publish a specific `skjemabygging-formio` commit by dispatching
 
 Run the commands from the `ws-innsending` workspace root.
 
+## Branch conventions
+
+`skjemabygging-formio` is the source repository and always uses its `main`
+branch to find release candidates. `skjemautfylling-formio` is the target
+repository and uses `master` by default for the release workflow. A user can
+name another target branch, such as `test-publishing`.
+
 ## Choose the source commit
 
-1. Fetch the latest `main` branch in the source repository:
+1. Fetch the latest `main` branch in `skjemabygging-formio`:
 
    ```bash
    git -C skjemabygging-formio fetch origin main
    ```
 
-2. Ask for the target branch before listing candidates. Use `master` unless the
-   user specifies another branch. List up to five recent commits whose
-   `build-and-test.yaml` workflow completed successfully:
+2. Ask for the `skjemautfylling-formio` target branch before listing candidates.
+   Use `master` unless the user specifies another branch. List up to five recent
+   commits whose `build-and-test.yaml` workflow completed successfully:
 
    ```bash
    plugins/devx/skills/release-fyllut/scripts/list-releasable-fyllut-commits.sh \
@@ -43,8 +50,8 @@ Run the commands from the `ws-innsending` workspace root.
 
 ## Dispatch the release
 
-Use `master` as the target branch unless the user specifies another branch. Confirm
-that the target branch exists before dispatching:
+Use `skjemautfylling-formio:master` as the target unless the user specifies
+another branch. Confirm that the target branch exists before dispatching:
 
 ```bash
 gh api "repos/navikt/skjemautfylling-formio/git/ref/heads/<target-branch>"
