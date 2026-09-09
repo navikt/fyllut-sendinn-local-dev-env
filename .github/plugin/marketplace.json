@@ -15,6 +15,12 @@
       "source": "plugins/chores"
     },
     {
+      "name": "support",
+      "description": "Helpers for investigating and answering support questions.",
+      "version": "0.1.0",
+      "source": "plugins/support"
+    },
+    {
       "name": "specification",
       "description": "Shared functional and technical specification workflow for Fyllut-Sendinn repositories.",
       "version": "0.2.2",
