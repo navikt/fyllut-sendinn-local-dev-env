@@ -117,11 +117,11 @@ of warnings, descriptions, or other text triggered by each answer. If Git
 history contradicts the premise that the focus text or a dependent text
 changed, say so directly and cite the relevant commits.
 
-## Use the bundled generator
+## Generate the report
 
-The skill includes
-`scripts/generate-form-text-history.mjs`. Use it to create the report instead
-of rebuilding the extraction logic for each form.
+When Node.js is available, use the bundled
+`scripts/generate-form-text-history.mjs` generator. It produces a consistent
+standalone report and should be the normal path.
 
 Run it with Node.js:
 
@@ -156,6 +156,27 @@ commits and keeps only changes that affected an active form text. Its report
 text is Norwegian. Inspect the generated report and supplement the method
 section if a repository version uses rendering rules the script does not yet
 cover.
+
+### Fallback when Node.js is unavailable
+
+Do not stop because Node.js is missing. Use the published repository history,
+the FyllUt renderer, and the instructions in this skill to create the
+standalone HTML report directly. Preserve the same evidence standard:
+
+1. Use `git log`, `git show`, and `git diff` to establish the baseline,
+   published-language states, paired publications, and relevant global
+   translation changes.
+2. Extract visible text by component identity and field, then resolve only the
+   languages listed in the form's top-level `publishedLanguages` field at each
+   snapshot.
+3. Create the HTML with the required summary, published-language status,
+   timeline, inventory, filters, fallback explanations, and commit links.
+4. State in the method section that the report was produced without the
+   generator, name the commands used to inspect history, and verify the same
+   report requirements listed below.
+
+The fallback needs Git and a way to write a local HTML file, but it does not
+need Node.js or external packages.
 
 ## Create the HTML report
 
