@@ -17,7 +17,7 @@ Identify:
 - the requested date range
 - the requested languages, limited to languages the form was actually published for
 - any wording or component the user wants investigated closely
-- the requested report location and language
+- the requested report location
 
 If the workspace contains several repositories, locate
 `skjemautfylling-formio` and `skjemabygging-formio` rather than assuming paths.
@@ -181,15 +181,19 @@ need Node.js or external packages.
 ## Create the HTML report
 
 Create one standalone HTML file that opens without a server or external assets.
-Write it in the language requested by the user.
+Write the report in Norwegian.
 
 Include:
 
 - scope, method, source repositories, and timestamp interpretation
-- metrics at the top, followed by a concise summary of the actual content
-  changes, such as wording replaced, text added or removed, and
-  translation-only changes; do not make this a summary of publication or event
-  counts
+- metrics at the top, followed by a concise, high-level summary of the actual
+  content changes. Describe the themes and types of changes, such as revised
+  headings, removed guidance, added help text, changed translations, or a newly
+  published language. Do not enumerate every changed field or quote each
+  before-and-after value. For example: "The update revises several headings,
+  removes guidance that no longer applies, and adds explanatory help text.
+  English was added as a published language later in the period." Do not make
+  this a summary of publication or event counts
 - a published-languages section after the content summary, listing the
   languages the form was published for at the start of the period and after
   every language-status change; state plainly whether the published language

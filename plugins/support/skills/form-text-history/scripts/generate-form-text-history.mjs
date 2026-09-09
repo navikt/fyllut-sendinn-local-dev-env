@@ -736,29 +736,65 @@ const languageChangeSummary =
   languageStates.length === 1
     ? `Publiseringsspråkene endret seg ikke i ${periodSentence}.`
     : `Publiseringsspråkene endret seg ${languageStates.length - 1} ${languageStates.length === 2 ? 'gang' : 'ganger'} i ${periodSentence}.`;
-const summaryText = (item) => {
-  const text = plainText(item.source).replace(/\s+/g, ' ');
-  return text.length > 180 ? `${text.slice(0, 177)}…` : text;
+const summaryCategory = (item) => {
+  if (item.componentType === 'alertstripe') return 'varseltekster';
+  return {
+    title: 'titler',
+    legend: 'gruppetitler',
+    label: 'felttekster',
+    description: 'hjelpetekster',
+    additionalDescriptionLabel: 'titler for utvidet hjelpetekst',
+    additionalDescriptionText: 'utvidede hjelpetekster',
+    content: 'informasjonstekster',
+    errorLabel: 'feiltekster',
+    placeholder: 'plassholdertekster',
+    customMessage: 'valideringsmeldinger',
+  }[item.field] ?? 'tekster';
 };
-const contentChangeSummaryHtml = visibleEvents.length
-  ? `<ul>${visibleEvents
-      .flatMap(({ changes }) =>
-        changes.map(({ before, after }) => {
-          const item = after ?? before;
-          const context = `${item.section}: ${describeField(item.field)}`;
-          if (!after) {
-            return `<li><strong>${escapeHtml(context)}</strong> ble fjernet: ${escapeHtml(summaryText(before))}.</li>`;
-          }
-          if (!before) {
-            return `<li><strong>${escapeHtml(context)}</strong> ble lagt til: ${escapeHtml(summaryText(after))}.</li>`;
-          }
-          if (before.nb !== after.nb) {
-            return `<li><strong>${escapeHtml(context)}</strong> ble endret fra «${escapeHtml(summaryText(before))}» til «${escapeHtml(summaryText(after))}».</li>`;
-          }
-          return `<li><strong>${escapeHtml(context)}</strong> fikk endret oversettelse.</li>`;
-        }),
-      )
-      .join('')}</ul>`
+const formatSummaryCategories = (categories) => {
+  const values = [...categories].sort((left, right) => left.localeCompare(right, 'nb'));
+  if (values.length < 2) return values[0];
+  return `${values.slice(0, -1).join(', ')} og ${values.at(-1)}`;
+};
+const contentChangeCategories = visibleEvents.flatMap(({ changes }) => changes).reduce(
+  (categories, { before, after }) => {
+    const item = after ?? before;
+    if (!after) categories.removed.add(summaryCategory(before));
+    else if (!before) categories.added.add(summaryCategory(after));
+    else if (before.nb !== after.nb) categories.replaced.add(summaryCategory(item));
+    else categories.translated.add(summaryCategory(item));
+    return categories;
+  },
+  {
+    added: new Set(),
+    removed: new Set(),
+    replaced: new Set(),
+    translated: new Set(),
+  },
+);
+const contentChangeSummary = [
+  contentChangeCategories.replaced.size
+    ? `Endringene omfatter oppdaterte ${formatSummaryCategories(contentChangeCategories.replaced)}.`
+    : '',
+  contentChangeCategories.added.size
+    ? `Det ble lagt til ${formatSummaryCategories(contentChangeCategories.added)}.`
+    : '',
+  contentChangeCategories.removed.size
+    ? `Det ble fjernet ${formatSummaryCategories(contentChangeCategories.removed)}.`
+    : '',
+  contentChangeCategories.translated.size
+    ? `Oversettelsene ble oppdatert for ${formatSummaryCategories(contentChangeCategories.translated)}.`
+    : '',
+  languageStates.length > 1
+    ? `Skjemaet ble også publisert med språkene ${publishedLanguageNames(
+        languageStates.at(-1).state.publishedLanguages,
+      )} fra ${formatTimestamp(languageStates.at(-1).timestamp)}.`
+    : '',
+]
+  .filter(Boolean)
+  .join(' ');
+const contentChangeSummaryHtml = contentChangeSummary
+  ? `<p>${escapeHtml(contentChangeSummary)}</p>`
   : '<p>Ingen brukersynlige tekster ble lagt til, fjernet eller endret i perioden.</p>';
 if (!histories.length) {
   throw new Error(
