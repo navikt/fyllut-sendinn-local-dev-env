@@ -1,6 +1,6 @@
 ---
 name: form-text-history
-description: Extract the user-visible text history of a published FyllUt form across a date range, including Bokmål source text, Nynorsk and English translations, exact change dates, and a shareable HTML report. Use when someone asks what wording a form had, when wording changed, or whether a specific question changed.
+description: Extract the user-visible text history of a published FyllUt form across a date range, including Bokmål source text, translations in its published languages, exact change dates, and a shareable HTML report. Use when someone asks what wording a form had, when wording changed, or whether a specific question changed.
 ---
 
 # Trace user-visible form text
@@ -15,7 +15,7 @@ Identify:
 
 - the form number or path, such as `nav190105`
 - the requested date range
-- the requested languages
+- the requested languages, limited to languages the form was actually published for
 - any wording or component the user wants investigated closely
 - the requested report location and language
 
@@ -32,10 +32,10 @@ In `skjemautfylling-formio`:
 4. Include the last state before the interval as the baseline.
 5. Pair form and translation commits that belong to the same publication. Use
    timestamps, commit messages, and their shared monorepo reference.
-6. Find every publication of the global Nynorsk and English translation
-   resources during the interval. Keep the ones that change a source string
-   active in the form at that time, even when the form itself was not
-   republished.
+6. Find every publication of the global translation resources for languages
+   the form was published for during the interval. Keep the ones that change a
+   source string active in the form at that time, even when the form itself was
+   not republished.
 7. Record commit hashes, publication timestamps, and upstream monorepo
    references.
 
@@ -72,14 +72,20 @@ conditional when it or any parent is hidden by a standard `conditional`,
 
 ## Extract language versions
 
-Treat the form definition as the Bokmål source. Resolve Nynorsk and English
-through the exact translation keys used by FyllUt.
+Treat the form definition as the Bokmål source. The top-level
+`publishedLanguages` field in the form definition defines which languages are
+published at each snapshot. Do not use `properties.publishedLanguages` or the
+keys in the translation file for this decision. Resolve only published
+languages through the exact translation keys used by FyllUt. Do not show an
+unpublished language merely because a global translation resource has a value
+for it.
 
 For each form publication and relevant global-translation state:
 
 1. Extract every user-visible Bokmål text by stable component key and field.
-2. Resolve its Nynorsk and English value from the translation resource.
-3. Record missing translations and the renderer's actual fallback behavior.
+2. Resolve values for every language published in that snapshot.
+3. Record missing translations and the renderer's actual fallback behavior for
+   published languages only.
 4. Keep HTML semantics that affect what the user reads, but normalize markup
    when comparing wording so formatting-only changes do not look like text
    changes.
@@ -105,7 +111,7 @@ Do not count removal of an orphaned translation as a user-visible change.
 Confirm that its source string was active in the form at that time.
 
 Investigate any wording named by the user separately. Show its value in every
-publication state and every requested language. Also follow conditional
+publication state and every language published in that state. Also follow conditional
 components that reference the focused component, and show the complete history
 of warnings, descriptions, or other text triggered by each answer. If Git
 history contradicts the premise that the focus text or a dependent text
@@ -159,10 +165,18 @@ Write it in the language requested by the user.
 Include:
 
 - scope, method, source repositories, and timestamp interpretation
+- metrics at the top, followed by a concise summary of the actual content
+  changes, such as wording replaced, text added or removed, and
+  translation-only changes; do not make this a summary of publication or event
+  counts
+- a published-languages section after the content summary, listing the
+  languages the form was published for at the start of the period and after
+  every language-status change; state plainly whether the published language
+  set changed
 - a prominent answer about the specifically requested wording
 - a chronological publication and change timeline
 - global translation changes that affected the form without a form publication
-- before-and-after text in every requested language
+- before-and-after text in every language actually published in each snapshot
 - a searchable full inventory of all user-visible text during the interval
 - filters for language, changed versus unchanged text, and form section
 - visible markers for changed, unchanged, conditional, and missing translation
@@ -188,8 +202,9 @@ Before finishing:
 1. Re-run the commit queries and confirm every in-range form publication and
    relevant global-translation publication appears.
 2. Compare every consecutive snapshot, including the baseline.
-3. Confirm all active source strings have a documented language value or
-   fallback.
+3. Confirm all active source strings have a documented value or fallback in
+   every language published for that snapshot, and that no unpublished
+   language appears in the report.
 4. Search the report for the wording named by the user.
 5. Parse or open the generated HTML and confirm navigation and filters work.
 6. Report the file path and the main factual conclusion.

@@ -226,6 +226,22 @@ const describeField = (field) => {
   return fieldNames[field] ?? field;
 };
 
+const languageDefinitions = {
+  nb: { name: 'Bokmål', publishedLanguageCodes: ['nb', 'nb-NO'] },
+  nn: { name: 'Nynorsk', publishedLanguageCodes: ['nn', 'nn-NO'] },
+  en: { name: 'Engelsk', publishedLanguageCodes: ['en', 'en-US'] },
+};
+
+const getPublishedLanguages = (form) =>
+  Object.entries(languageDefinitions)
+    .filter(
+      ([, definition]) =>
+        definition.publishedLanguageCodes.some((language) =>
+          form.publishedLanguages?.includes(language),
+        ),
+    )
+    .map(([language]) => language);
+
 const extractVisibleText = (form) => {
   const items = new Map();
   const put = (identity, field, source, metadata) => {
@@ -332,37 +348,45 @@ const buildState = (revision) => {
   const globalNynorsk = flattenGlobalTranslations(showJson(revision, trackedPaths[2]), 'nn-NO');
   const globalEnglish = flattenGlobalTranslations(showJson(revision, trackedPaths[3]), 'en');
   const items = extractVisibleText(form);
+  const publishedLanguages = getPublishedLanguages(form);
 
   for (const item of items.values()) {
     item.nb = item.source;
-    item.nn =
-      localTranslations['nn-NO']?.[item.source] ??
-      globalNynorsk[item.source] ??
-      item.source;
-    item.en =
-      localTranslations.en?.[item.source] ??
-      globalEnglish[item.source] ??
-      item.source;
-    item.nnSource = localTranslations['nn-NO']?.[item.source]
-      ? 'skjema'
-      : globalNynorsk[item.source]
-        ? 'felles'
-        : 'bokmål';
-    item.enSource = localTranslations.en?.[item.source]
-      ? 'skjema'
-      : globalEnglish[item.source]
-        ? 'felles'
-        : 'bokmål';
+    item.publishedLanguages = publishedLanguages;
+    if (publishedLanguages.includes('nn')) {
+      item.nn =
+        localTranslations['nn-NO']?.[item.source] ??
+        globalNynorsk[item.source] ??
+        item.source;
+      item.nnSource = localTranslations['nn-NO']?.[item.source]
+        ? 'skjema'
+        : globalNynorsk[item.source]
+          ? 'felles'
+          : 'bokmål';
+    }
+    if (publishedLanguages.includes('en')) {
+      item.en =
+        localTranslations.en?.[item.source] ??
+        globalEnglish[item.source] ??
+        item.source;
+      item.enSource = localTranslations.en?.[item.source]
+        ? 'skjema'
+        : globalEnglish[item.source]
+          ? 'felles'
+          : 'bokmål';
+    }
   }
+  items.publishedLanguages = publishedLanguages;
   return items;
 };
 
 const sameText = (left, right) =>
   Boolean(left) &&
   Boolean(right) &&
-  left.nb === right.nb &&
-  left.nn === right.nn &&
-  left.en === right.en;
+  JSON.stringify(left.publishedLanguages) === JSON.stringify(right.publishedLanguages) &&
+  [...new Set([...left.publishedLanguages, ...right.publishedLanguages])].every(
+    (language) => left[language] === right[language],
+  );
 
 const baselineRevision = git([
   'rev-list',
@@ -524,11 +548,9 @@ const groupChanges = (changes) => {
   return [...groups.values()];
 };
 
-const languageName = {
-  nb: 'Bokmål',
-  nn: 'Nynorsk',
-  en: 'Engelsk',
-};
+const languageName = Object.fromEntries(
+  Object.entries(languageDefinitions).map(([language, { name }]) => [language, name]),
+);
 const languageAdjective = {
   nn: 'nynorske',
   en: 'engelske',
@@ -541,10 +563,18 @@ const languagePreposition = {
 const renderText = (value) =>
   `<span class="text-value">${escapeHtml(plainText(value) || 'Ikke vist')}</span>`;
 
+const renderLanguageValue = (item, language) =>
+  item && !item.publishedLanguages.includes(language)
+    ? '<span class="text-value">Ikke publisert for dette språket</span>'
+    : renderText(item?.[language]);
+
 const renderChangeGroup = (group) => {
-  const languages = ['nb', 'nn', 'en'].filter(
-    (language) => group.before?.[language] !== group.after?.[language],
-  );
+  const languages = [
+    ...new Set([
+      ...(group.before?.publishedLanguages ?? []),
+      ...(group.after?.publishedLanguages ?? []),
+    ]),
+  ].filter((language) => group.before?.[language] !== group.after?.[language]);
   return `
     <div class="change-group">
       <p class="context">${escapeHtml(group.contexts.join(' · '))}</p>
@@ -568,8 +598,8 @@ const renderChangeGroup = (group) => {
             <div class="language-change">
               <h4>${languageName[language]}</h4>
               <div class="before-after">
-                <div><span class="change-label removed">Før</span>${renderText(group.before?.[language])}</div>
-                <div><span class="change-label added">Etter</span>${renderText(group.after?.[language])}</div>
+                <div><span class="change-label removed">Før</span>${renderLanguageValue(group.before, language)}</div>
+                <div><span class="change-label added">Etter</span>${renderLanguageValue(group.after, language)}</div>
               </div>
               ${sourceNote ? `<p class="fallback-note">${escapeHtml(sourceNote)}</p>` : ''}
             </div>`;
@@ -628,9 +658,25 @@ const renderVersion = ({ event, item }, index, versions) => {
     <div class="version">
       <p class="version-date">${escapeHtml(period)}</p>
       <dl class="language-grid">
-        <div class="lang lang-nb"><dt>Bokmål</dt><dd>${renderText(item.nb)}</dd></div>
-        <div class="lang lang-nn"><dt>Nynorsk <small>${item.nnSource === 'bokmål' ? 'viste bokmål' : item.nnSource === 'felles' ? 'felles oversettelse' : 'skjemaoversettelse'}</small></dt><dd>${renderText(item.nn)}</dd></div>
-        <div class="lang lang-en"><dt>Engelsk <small>${item.enSource === 'bokmål' ? 'viste bokmål' : item.enSource === 'felles' ? 'felles oversettelse' : 'skjemaoversettelse'}</small></dt><dd>${renderText(item.en)}</dd></div>
+        ${item.publishedLanguages
+          .map(
+            (language) => `
+              <div class="lang lang-${language}">
+                <dt>${languageName[language]}${
+                  language === 'nb'
+                    ? ''
+                    : ` <small>${
+                        item[`${language}Source`] === 'bokmål'
+                          ? 'viste bokmål'
+                          : item[`${language}Source`] === 'felles'
+                            ? 'felles oversettelse'
+                            : 'skjemaoversettelse'
+                      }</small>`
+                }</dt>
+                <dd>${renderText(item[language])}</dd>
+              </div>`,
+          )
+          .join('')}
       </dl>
     </div>`;
 };
@@ -640,7 +686,9 @@ const inventoryHtml = histories
     const searchableText = [
       representative.section,
       representative.componentKey,
-      ...versions.flatMap(({ item }) => (item ? [item.nb, item.nn, item.en] : [])),
+      ...versions.flatMap(({ item }) =>
+        item ? item.publishedLanguages.map((language) => item[language]) : [],
+      ),
     ].join(' ');
     return `
       <article
@@ -670,6 +718,48 @@ const sections = [...new Set(histories.map(({ representative }) => representativ
 );
 const changedItems = histories.filter(({ changed }) => changed).length;
 const visibleEvents = events.filter(({ changes }) => changes.length);
+const languageStates = states.filter(
+  ({ state }, index) =>
+    index === 0 ||
+    JSON.stringify(state.publishedLanguages) !==
+      JSON.stringify(states[index - 1].state.publishedLanguages),
+);
+const publishedLanguageNames = (languages) => languages.map((language) => languageName[language]).join(' og ');
+const languageStatusHtml = languageStates
+  .map(({ timestamp, kind, state }, index) => {
+    const date = index === 0 ? formatDate(fromDate) : formatTimestamp(timestamp);
+    const status = index === 0 ? 'Ved periodens start' : kind === 'form' ? 'Etter skjemapubliseringen' : 'Etter oversettelsesendringen';
+    return `<li><strong>${escapeHtml(status)}</strong>, ${escapeHtml(date)}: ${escapeHtml(publishedLanguageNames(state.publishedLanguages))}.</li>`;
+  })
+  .join('');
+const languageChangeSummary =
+  languageStates.length === 1
+    ? `Publiseringsspråkene endret seg ikke i ${periodSentence}.`
+    : `Publiseringsspråkene endret seg ${languageStates.length - 1} ${languageStates.length === 2 ? 'gang' : 'ganger'} i ${periodSentence}.`;
+const summaryText = (item) => {
+  const text = plainText(item.source).replace(/\s+/g, ' ');
+  return text.length > 180 ? `${text.slice(0, 177)}…` : text;
+};
+const contentChangeSummaryHtml = visibleEvents.length
+  ? `<ul>${visibleEvents
+      .flatMap(({ changes }) =>
+        changes.map(({ before, after }) => {
+          const item = after ?? before;
+          const context = `${item.section}: ${describeField(item.field)}`;
+          if (!after) {
+            return `<li><strong>${escapeHtml(context)}</strong> ble fjernet: ${escapeHtml(summaryText(before))}.</li>`;
+          }
+          if (!before) {
+            return `<li><strong>${escapeHtml(context)}</strong> ble lagt til: ${escapeHtml(summaryText(after))}.</li>`;
+          }
+          if (before.nb !== after.nb) {
+            return `<li><strong>${escapeHtml(context)}</strong> ble endret fra «${escapeHtml(summaryText(before))}» til «${escapeHtml(summaryText(after))}».</li>`;
+          }
+          return `<li><strong>${escapeHtml(context)}</strong> fikk endret oversettelse.</li>`;
+        }),
+      )
+      .join('')}</ul>`
+  : '<p>Ingen brukersynlige tekster ble lagt til, fjernet eller endret i perioden.</p>';
 if (!histories.length) {
   throw new Error(
     `The form ${formPath} had no user-visible text between ${fromDate} and ${toDate}.`,
@@ -780,9 +870,12 @@ const focusSection = focus
           }</p>
         </div>
         <dl class="language-grid">
-          <div><dt>Bokmål</dt><dd>${renderText(focus.nb)}</dd></div>
-          <div><dt>Nynorsk</dt><dd>${renderText(focus.nn)}</dd></div>
-          <div><dt>Engelsk</dt><dd>${renderText(focus.en)}</dd></div>
+          ${focus.publishedLanguages
+            .map(
+              (language) =>
+                `<div><dt>${languageName[language]}</dt><dd>${renderText(focus[language])}</dd></div>`,
+            )
+            .join('')}
         </dl>
       </div>
       ${focusDependentHtml}
@@ -972,7 +1065,7 @@ const html = `<!doctype html>
     .dependent-text h4 { margin: 0.2rem 0 0; font-size: 1.05rem; }
     .language-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
       gap: 0.7rem;
       margin: 0;
     }
@@ -1059,7 +1152,7 @@ const html = `<!doctype html>
       top: 3.9rem;
       z-index: 10;
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-columns: 2fr repeat(3, 1fr);
       gap: 0.7rem;
       margin-bottom: 1rem;
       padding: 0.9rem;
@@ -1135,9 +1228,11 @@ const html = `<!doctype html>
   <header class="hero">
     <p class="eyebrow">Dokumentert fra Git-historikken</p>
     <h1>Teksthistorikk for <span class="form-number">${escapeHtml(formNumber)}</span> i ${escapeHtml(periodLabel)}</h1>
-    <p class="lead">Alle brukersynlige tekster i skjemaet "${escapeHtml(formTitle)}", med bokmål, nynorsk og engelsk. Rapporten skiller mellom skjematekster og felles FyllUt-oversettelser.</p>
+    <p class="lead">Alle brukersynlige tekster i skjemaet "${escapeHtml(formTitle)}", på språkene skjemaet faktisk var publisert på. Rapporten skiller mellom skjematekster og felles FyllUt-oversettelser.</p>
   </header>
   <nav class="page-nav" aria-label="Innhold">
+    <a href="#oppsummering">Oppsummering</a>
+    <a href="#språk">Publiserte språk</a>
     ${focusNavigation}
     <a href="#tidslinje">Tidslinje</a>
     <a href="#alle-tekster">Alle tekster</a>
@@ -1163,6 +1258,18 @@ const html = `<!doctype html>
       </div>
     </div>
 
+    <section id="oppsummering">
+      <h2>Endringer i innhold</h2>
+      <p class="section-intro">Denne oversikten oppsummerer tekstinnholdet som endret seg i ${escapeHtml(periodSentence)}.</p>
+      ${contentChangeSummaryHtml}
+    </section>
+
+    <section id="språk">
+      <h2>Publiserte språk</h2>
+      <p class="section-intro">${escapeHtml(languageChangeSummary)} Bare disse språkene er tatt med i tidslinjen og tekstoversikten.</p>
+      <ul>${languageStatusHtml}</ul>
+    </section>
+
     ${focusSection}
 
     <section id="tidslinje">
@@ -1173,7 +1280,7 @@ const html = `<!doctype html>
 
     <section id="alle-tekster">
       <h2>Alle brukersynlige tekster</h2>
-      <p class="section-intro">Listen dekker alle tekstplasseringer som var aktive minst én gang i ${periodSentence}. "Betinget" betyr at teksten bare ble vist når brukerens tidligere svar utløste komponenten. Når nynorsk eller engelsk viser "viste bokmål", fantes det ikke et treff i verken skjemaets eller FyllUts felles oversettelser på det tidspunktet.</p>
+      <p class="section-intro">Listen dekker alle tekstplasseringer som var aktive minst én gang i ${periodSentence}. "Betinget" betyr at teksten bare ble vist når brukerens tidligere svar utløste komponenten. Når et publisert språk viser "viste bokmål", fantes det ikke et treff i verken skjemaets eller FyllUts felles oversettelser på det tidspunktet.</p>
       <div class="controls" aria-label="Filtrer tekstoversikten">
         <label>Søk i tekst eller komponent
           <input id="search" type="search" placeholder="For eksempel vedlegg, adresse eller et spørsmål">
@@ -1183,6 +1290,14 @@ const html = `<!doctype html>
             <option value="all">Alle tekster</option>
             <option value="true">Bare endrede</option>
             <option value="false">Bare uendrede</option>
+          </select>
+        </label>
+        <label>Språk
+          <select id="language-filter">
+            <option value="all">Alle publiserte språk</option>
+            ${[...new Set(languageStates.flatMap(({ state }) => state.publishedLanguages))]
+              .map((language) => `<option value="${language}">${languageName[language]}</option>`)
+              .join('')}
           </select>
         </label>
         <label>Seksjon
@@ -1230,6 +1345,7 @@ const html = `<!doctype html>
     const cards = [...document.querySelectorAll('.text-card')];
     const search = document.querySelector('#search');
     const changeFilter = document.querySelector('#change-filter');
+    const languageFilter = document.querySelector('#language-filter');
     const sectionFilter = document.querySelector('#section-filter');
     const resultsCount = document.querySelector('#results-count');
 
@@ -1245,11 +1361,16 @@ const html = `<!doctype html>
         card.hidden = !(matchesSearch && matchesChange && matchesSection);
         if (!card.hidden) visible += 1;
       }
+      for (const language of document.querySelectorAll('.lang')) {
+        language.hidden =
+          languageFilter.value !== 'all' && !language.classList.contains('lang-' + languageFilter.value);
+      }
       resultsCount.textContent = visible + ' av ' + cards.length + ' tekstplasseringer vises';
     };
 
     search.addEventListener('input', updateFilters);
     changeFilter.addEventListener('change', updateFilters);
+    languageFilter.addEventListener('change', updateFilters);
     sectionFilter.addEventListener('change', updateFilters);
     updateFilters();
   </script>
