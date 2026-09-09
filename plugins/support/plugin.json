@@ -1,0 +1,11 @@
+{
+  "name": "support",
+  "description": "Helpers for investigating and answering support questions.",
+  "version": "0.1.0",
+  "author": {
+    "name": "NAV"
+  },
+  "repository": "https://github.com/navikt/fyllut-sendinn-local-dev-env",
+  "keywords": ["support", "investigation", "forms"],
+  "skills": "skills/"
+}
