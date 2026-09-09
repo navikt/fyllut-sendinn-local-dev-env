@@ -218,6 +218,23 @@ const fieldNames = {
   errorLabel: 'Feiltekst',
   placeholder: 'Plassholder',
   customMessage: 'Valideringsmelding',
+  'sender:nationalIdentityNumber': 'Felttekst i sender-komponent',
+  'sender:firstName': 'Felttekst i sender-komponent',
+  'sender:surname': 'Felttekst i sender-komponent',
+  'sender:organizationNumber': 'Felttekst i sender-komponent',
+  'sender:organizationName': 'Felttekst i sender-komponent',
+  'sender:applicationInsight': 'Informasjon fra sender-komponent',
+  'description:nationalIdentityNumber': 'Hjelpetekst i sender-komponent',
+  'description:organizationNumber': 'Hjelpetekst i sender-komponent',
+  'identity:question': 'Felttekst i identitetskomponent',
+  'identity:yes': 'Svaralternativ i identitetskomponent',
+  'identity:no': 'Svaralternativ i identitetskomponent',
+  'identity:nationalIdentityNumber': 'Felttekst i identitetskomponent',
+  'identity:birthDate': 'Felttekst i identitetskomponent',
+  'addressValidity:fromLabel': 'Datofelt fra adressekomponent',
+  'addressValidity:fromDescription': 'Hjelpetekst fra adressekomponent',
+  'addressValidity:toLabel': 'Datofelt fra adressekomponent',
+  'addressValidity:toDescription': 'Hjelpetekst fra adressekomponent',
 };
 
 const describeField = (field) => {
@@ -242,8 +259,31 @@ const getPublishedLanguages = (form) =>
     )
     .map(([language]) => language);
 
+const rendererText = {
+  sender: {
+    applicationInsight:
+      'Når du har sendt inn skjemaet, vil det ikke være tilgjengelig på Min side for deg. Det vil være tilgjengelig for personen du sender inn på vegne av.',
+  },
+  identity: {
+    question: 'Har du norsk fødselsnummer eller d-nummer?',
+    yes: 'Ja',
+    no: 'Nei',
+    nationalIdentityNumber: 'Fødselsnummer eller d-nummer',
+    birthDate: 'Fødselsdato (dd.mm.åååå)',
+  },
+  addressValidity: {
+    fromLabel: 'Gyldig fra (dd.mm.åååå)',
+    fromDescription:
+      'Fra hvilken dato skal denne adressen brukes? Du kan sette denne datoen maks 1 år tilbake i tid.',
+    toLabel: 'Gyldig til (dd.mm.åååå)',
+    toDescription:
+      'Du velger selv hvor lenge adressen skal være gyldig, maksimalt 1 år. Etter 1 år må du endre eller forlenge adressen.',
+  },
+};
+
 const extractVisibleText = (form) => {
   const items = new Map();
+  const identityCounts = new Map();
   const put = (identity, field, source, metadata) => {
     if (typeof source !== 'string' || !source.trim()) return;
     items.set(`${identity}|${field}`, {
@@ -252,6 +292,106 @@ const extractVisibleText = (form) => {
       source,
       ...metadata,
     });
+  };
+  const getIdentity = (component) => {
+    if (component.navId) return `navId:${component.navId}`;
+
+    const componentType = component.type || 'component';
+    const stableKey = component.key || component.type || component.id || 'component';
+    const baseIdentity = `fallback:${componentType}:${stableKey}`;
+    const occurrence = identityCounts.get(baseIdentity) ?? 0;
+    identityCounts.set(baseIdentity, occurrence + 1);
+    return occurrence ? `${baseIdentity}#${occurrence + 1}` : baseIdentity;
+  };
+  const withCondition = (metadata, when, equals) => ({
+    ...metadata,
+    conditional: true,
+    conditions: [...metadata.conditions, { when, equals }],
+  });
+  const extractCustomComponentText = (component, identity, metadata) => {
+    if (component.type === 'sender') {
+      const role = component.senderRole ?? 'person';
+      const labels = component.customLabels ?? {};
+      const descriptions = component.descriptions ?? {};
+      if (role === 'organization') {
+        put(identity, 'sender:organizationNumber', labels.organizationNumber, metadata);
+        put(identity, 'sender:organizationName', labels.organizationName, metadata);
+        put(identity, 'description:organizationNumber', descriptions.organizationNumber, metadata);
+      } else {
+        put(identity, 'sender:nationalIdentityNumber', labels.nationalIdentityNumber, metadata);
+        put(identity, 'sender:firstName', labels.firstName, metadata);
+        put(identity, 'sender:surname', labels.surname, metadata);
+        put(identity, 'description:nationalIdentityNumber', descriptions.nationalIdentityNumber, metadata);
+      }
+
+      const submissionTypes = form.properties?.submissionTypes ?? [];
+      const hasDigitalSubmission = submissionTypes.some((type) =>
+        String(type).toUpperCase().startsWith('DIGITAL'),
+      );
+      if (hasDigitalSubmission) {
+        const hasPaperSubmission = submissionTypes.some(
+          (type) => String(type).toUpperCase().startsWith('PAPER'),
+        );
+        put(
+          identity,
+          'sender:applicationInsight',
+          rendererText.sender.applicationInsight,
+          hasPaperSubmission
+            ? withCondition(metadata, 'submissionMethod', 'digital')
+            : metadata,
+        );
+      }
+    }
+
+    if (component.type === 'identity') {
+      const answerKey = `${component.key || 'identitet'}.harDuFodselsnummer`;
+      const submissionTypes = form.properties?.submissionTypes ?? [];
+      const isReadOnlyForSomeSubmissions =
+        Boolean(component.prefillKey) &&
+        submissionTypes.some((type) => String(type).toUpperCase().startsWith('DIGITAL'));
+      const interactiveMetadata = isReadOnlyForSomeSubmissions
+        ? withCondition(metadata, 'submissionMethod', 'paper')
+        : metadata;
+      put(
+        identity,
+        'identity:question',
+        component.customLabels?.doYouHaveIdentityNumber ?? rendererText.identity.question,
+        interactiveMetadata,
+      );
+      put(identity, 'identity:yes', rendererText.identity.yes, interactiveMetadata);
+      put(identity, 'identity:no', rendererText.identity.no, interactiveMetadata);
+      put(
+        identity,
+        'identity:nationalIdentityNumber',
+        rendererText.identity.nationalIdentityNumber,
+        isReadOnlyForSomeSubmissions
+          ? metadata
+          : withCondition(metadata, answerKey, 'ja'),
+      );
+      put(
+        identity,
+        'identity:birthDate',
+        rendererText.identity.birthDate,
+        withCondition(interactiveMetadata, answerKey, 'nei'),
+      );
+    }
+
+    if (component.type === 'addressValidity') {
+      put(identity, 'addressValidity:fromLabel', rendererText.addressValidity.fromLabel, metadata);
+      put(
+        identity,
+        'addressValidity:fromDescription',
+        rendererText.addressValidity.fromDescription,
+        metadata,
+      );
+      put(identity, 'addressValidity:toLabel', rendererText.addressValidity.toLabel, metadata);
+      put(
+        identity,
+        'addressValidity:toDescription',
+        rendererText.addressValidity.toDescription,
+        metadata,
+      );
+    }
   };
 
   put('form', 'title', form.title, {
@@ -263,15 +403,13 @@ const extractVisibleText = (form) => {
 
   const visit = (
     component,
-    parentPath,
     section,
     parentConditions,
     parentIsConditional,
   ) => {
     if (!component || typeof component !== 'object') return;
 
-    const segment = component.key || component.type || 'component';
-    const identity = parentPath ? `${parentPath}/${segment}` : segment;
+    const identity = getIdentity(component);
     const currentSection =
       component.type === 'panel' && component.title ? component.title : section || 'Annet';
     const ownCondition =
@@ -291,6 +429,7 @@ const extractVisibleText = (form) => {
       section: currentSection,
       componentKey: component.key || '',
       componentType: component.type || '',
+      componentNavId: component.navId || '',
       conditional,
       conditions,
     };
@@ -315,6 +454,7 @@ const extractVisibleText = (form) => {
     }
 
     put(identity, 'customMessage', component.validate?.customMessage, metadata);
+    extractCustomComponentText(component, identity, metadata);
 
     const options = Array.isArray(component.values) ? component.values : [];
     for (const [index, option] of options.entries()) {
@@ -324,20 +464,20 @@ const extractVisibleText = (form) => {
     }
 
     for (const child of Array.isArray(component.components) ? component.components : []) {
-      visit(child, identity, currentSection, conditions, conditional);
+      visit(child, currentSection, conditions, conditional);
     }
     for (const child of Array.isArray(component.columns) ? component.columns : []) {
-      visit(child, identity, currentSection, conditions, conditional);
+      visit(child, currentSection, conditions, conditional);
     }
     for (const row of Array.isArray(component.rows) ? component.rows : []) {
       for (const child of Array.isArray(row) ? row : []) {
-        visit(child, identity, currentSection, conditions, conditional);
+        visit(child, currentSection, conditions, conditional);
       }
     }
   };
 
   for (const component of form.components ?? []) {
-    visit(component, '', '', [], false);
+    visit(component, '', [], false);
   }
   return items;
 };
@@ -387,6 +527,33 @@ const sameText = (left, right) =>
   [...new Set([...left.publishedLanguages, ...right.publishedLanguages])].every(
     (language) => left[language] === right[language],
   );
+
+const alignMovedItems = (previousState, state) => {
+  const removed = [...previousState].filter(([identity]) => !state.has(identity));
+  const added = new Map([...state].filter(([identity]) => !previousState.has(identity)));
+  const itemSignature = (item) =>
+    JSON.stringify([item.componentType, item.componentKey, item.field]);
+
+  for (const [previousIdentity, previousItem] of removed) {
+    const candidates = [...added].filter(
+      ([, item]) => itemSignature(item) === itemSignature(previousItem),
+    );
+    const matchingText = candidates.filter(([, item]) => sameText(previousItem, item));
+    const match =
+      matchingText.length === 1
+        ? matchingText[0]
+        : candidates.length === 1
+          ? candidates[0]
+          : undefined;
+    if (!match) continue;
+
+    const [currentIdentity, currentItem] = match;
+    state.delete(currentIdentity);
+    currentItem.identity = previousItem.identity;
+    state.set(previousIdentity, currentItem);
+    added.delete(currentIdentity);
+  }
+};
 
 const baselineRevision = git([
   'rev-list',
@@ -468,6 +635,7 @@ for (const revision of candidateCommits) {
   const metadata = commitMetadata.get(revision);
   const { timestamp, subject } = metadata;
   const state = buildState(revision);
+  alignMovedItems(previousState, state);
   const changes = [];
   const identities = new Set([...previousState.keys(), ...state.keys()]);
 
@@ -509,12 +677,14 @@ for (const identity of allIdentities) {
     }
   }
 
-  const representative = [...versions].reverse().find(({ item }) => item)?.item;
+  const representative =
+    states.at(-1).state.get(identity) ??
+    [...versions].reverse().find(({ item }) => item)?.item;
   histories.push({
     identity,
     representative,
     versions,
-    changed: versions.length > 1,
+    changed: versions.length > 1 || !baseline.state.has(identity),
   });
 }
 
@@ -707,7 +877,11 @@ const inventoryHtml = histories
             ${representative.conditional ? '<span class="badge conditional">Betinget</span>' : ''}
           </div>
         </header>
-        <p class="technical-reference"><code>${escapeHtml(representative.componentKey || identity)}</code></p>
+        <p class="technical-reference"><code>${escapeHtml(representative.componentKey || identity)}</code>${
+          representative.componentNavId
+            ? ` · stabil komponent-ID <code>${escapeHtml(representative.componentNavId)}</code>`
+            : ''
+        }</p>
         ${versions.map(renderVersion).join('')}
       </article>`;
   })
@@ -738,6 +912,23 @@ const languageChangeSummary =
     : `Publiseringsspråkene endret seg ${languageStates.length - 1} ${languageStates.length === 2 ? 'gang' : 'ganger'} i ${periodSentence}.`;
 const summaryCategory = (item) => {
   if (item.componentType === 'alertstripe') return 'varseltekster';
+  if (item.field === 'sender:applicationInsight') return 'informasjonstekster';
+  if (['identity:yes', 'identity:no'].includes(item.field)) {
+    return 'svaralternativer';
+  }
+  if (
+    item.field.startsWith('sender:') ||
+    item.field.startsWith('identity:') ||
+    ['addressValidity:fromLabel', 'addressValidity:toLabel'].includes(item.field)
+  ) {
+    return 'felttekster';
+  }
+  if (
+    item.field.startsWith('description:') ||
+    ['addressValidity:fromDescription', 'addressValidity:toDescription'].includes(item.field)
+  ) {
+    return 'hjelpetekster';
+  }
   return {
     title: 'titler',
     legend: 'gruppetitler',
@@ -772,7 +963,7 @@ const contentChangeCategories = visibleEvents.flatMap(({ changes }) => changes).
     translated: new Set(),
   },
 );
-const contentChangeSummary = [
+const categoryChangeSummary = [
   contentChangeCategories.replaced.size
     ? `Endringene omfatter oppdaterte ${formatSummaryCategories(contentChangeCategories.replaced)}.`
     : '',
@@ -793,6 +984,63 @@ const contentChangeSummary = [
 ]
   .filter(Boolean)
   .join(' ');
+const updateLabel = (index) =>
+  ['Den første oppdateringen', 'Den andre oppdateringen', 'Den tredje oppdateringen'][index] ??
+  `Oppdateringen ${formatTimestamp(visibleEvents[index].timestamp)}`;
+const describeContentEvent = (event, index) => {
+  const added = event.changes.filter(({ before, after }) => !before && after).map(({ after }) => after);
+  const removed = event.changes.filter(({ before, after }) => before && !after).map(({ before }) => before);
+  const removedPostalGuidance = removed.some(({ source }) =>
+    plainText(source).toLocaleLowerCase('nb-NO').includes('må sende søknaden i posten'),
+  );
+  const addedSenderText = added.filter(({ componentType }) => componentType === 'sender');
+  const removedSeparateSenderFields = removed.filter(({ componentType }) =>
+    ['firstName', 'orgNr', 'surname', 'textfield'].includes(componentType),
+  );
+  const replacedSeparateSenderFields =
+    addedSenderText.length > 0 && removedSeparateSenderFields.length > 0;
+  const retainedSenderLabels = addedSenderText.some(({ source }) =>
+    removedSeparateSenderFields.some(
+      (removedItem) => plainText(removedItem.source) === plainText(source),
+    ),
+  );
+  const addedIdentityText = added.some(({ componentType }) => componentType === 'identity');
+  const addedAddressValidityText = added.some(
+    ({ componentType }) => componentType === 'addressValidity',
+  );
+  const addedConditionalBranch =
+    added.some(({ conditional }) => conditional) &&
+    addedIdentityText &&
+    addedAddressValidityText;
+
+  if (removedPostalGuidance || replacedSeparateSenderFields) {
+    return [
+      removedPostalGuidance
+        ? `${updateLabel(index)} fjernet veiledningen om at søknader på vegne av andre måtte sendes i posten.`
+        : '',
+      replacedSeparateSenderFields
+        ? `De tidligere separate person- og virksomhetsfeltene ble erstattet av sammensatte avsenderfelt.${
+            retainedSenderLabels
+              ? ' Flere ledetekster ble videreført, mens felt for fødselsnummer og informasjon om innsyn etter digital innsending ble lagt til.'
+              : ''
+          }`
+        : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  if (addedConditionalBranch) {
+    return `${updateLabel(index)} la til en betinget gren for søkerens opplysninger når noen søker på vegne av andre, med identitetsfelter, adresseveiledning og felt for adressens gyldighetsperiode.`;
+  }
+
+  return '';
+};
+const eventContentSummaries = visibleEvents.map(describeContentEvent);
+const contentChangeSummary =
+  eventContentSummaries.every(Boolean) && eventContentSummaries.length
+    ? eventContentSummaries.join(' ')
+    : categoryChangeSummary;
 const contentChangeSummaryHtml = contentChangeSummary
   ? `<p>${escapeHtml(contentChangeSummary)}</p>`
   : '<p>Ingen brukersynlige tekster ble lagt til, fjernet eller endret i perioden.</p>';
@@ -1358,6 +1606,7 @@ const html = `<!doctype html>
             <li>Skjemaspesifikke oversettelser i <a href="${repositoryUrl}/blob/${metadataRevision}/${trackedPaths[1]}" target="_blank" rel="noopener noreferrer"><code>${escapeHtml(trackedPaths[1])}</code></a>.</li>
             <li>Felles nynorsk- og engelskressurser under <code>resources/global-translations-*.json</code>.</li>
             <li>Felt FyllUt renderer: titler, felttekster, beskrivelser, informasjonstekst, svaralternativer, utvidet hjelpetekst, plassholdere og egendefinerte valideringsmeldinger.</li>
+            <li>Renderer-eide tekster i sammensatte <code>sender</code>-, <code>identity</code>- og <code>addressValidity</code>-komponenter.</li>
           </ul>
         </div>
         <div>

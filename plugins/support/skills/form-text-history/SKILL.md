@@ -119,9 +119,13 @@ changed, say so directly and cite the relevant commits.
 
 ## Generate the report
 
-When Node.js is available, use the bundled
-`scripts/generate-form-text-history.mjs` generator. It produces a consistent
-standalone report and should be the normal path.
+Node.js is required. Confirm that `node --version` succeeds before starting the
+report. If Node.js is unavailable, stop and report that the generation is
+blocked; do not create the report manually or substitute an ad hoc script.
+
+Always use the bundled `scripts/generate-form-text-history.mjs` generator. It
+produces the evidence and the standalone report from the same normalized
+history model.
 
 Run it with Node.js:
 
@@ -153,30 +157,14 @@ Optional options:
 The generator discovers paired form and translation commits through their
 shared monorepo reference. It also checks global Nynorsk and English resource
 commits and keeps only changes that affected an active form text. Its report
-text is Norwegian. Inspect the generated report and supplement the method
-section if a repository version uses rendering rules the script does not yet
-cover.
-
-### Fallback when Node.js is unavailable
-
-Do not stop because Node.js is missing. Use the published repository history,
-the FyllUt renderer, and the instructions in this skill to create the
-standalone HTML report directly. Preserve the same evidence standard:
-
-1. Use `git log`, `git show`, and `git diff` to establish the baseline,
-   published-language states, paired publications, and relevant global
-   translation changes.
-2. Extract visible text by component identity and field, then resolve only the
-   languages listed in the form's top-level `publishedLanguages` field at each
-   snapshot.
-3. Create the HTML with the required summary, published-language status,
-   timeline, inventory, filters, fallback explanations, and commit links.
-4. State in the method section that the report was produced without the
-   generator, name the commands used to inspect history, and verify the same
-   report requirements listed below.
-
-The fallback needs Git and a way to write a local HTML file, but it does not
-need Node.js or external packages.
+text is Norwegian. It expands renderer-owned text for the `sender`, `identity`,
+and `addressValidity` components, including conditional subfields that are not
+stored as ordinary Form.io labels. Component identity follows `navId`, the
+stable identifier used by all component types, so key renames and structural
+moves do not appear as wording changes. A type-and-key fallback covers legacy
+components without `navId`. Inspect the generated report and supplement the
+method section if a repository version uses rendering rules or custom
+components the script does not yet cover.
 
 ## Create the HTML report
 
