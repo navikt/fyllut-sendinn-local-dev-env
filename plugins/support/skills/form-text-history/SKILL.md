@@ -162,7 +162,9 @@ for composite components, but it does not copy current renderer-owned static
 text into historical snapshots. Component identity follows `navId`, the stable
 identifier used by all component types, so key renames and structural moves do
 not appear as wording changes. A type-and-key fallback covers legacy components
-without `navId`.
+without `navId`. Submission-method visibility recognizes `PAPER`, `DIGITAL`,
+`DIGITAL_NO_LOGIN`, `STATIC_PDF`, and `PAPER_NO_COVER_PAGE` as distinct
+submission types.
 
 Inspect the renderer separately for static text owned by a custom component.
 Include that text only when repository and deployment evidence identifies the

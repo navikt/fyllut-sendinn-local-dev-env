@@ -251,6 +251,14 @@ const getPublishedLanguages = (form) =>
     )
     .map(([language]) => language);
 
+const submissionMethodByType = {
+  PAPER: 'paper',
+  DIGITAL: 'digital',
+  DIGITAL_NO_LOGIN: 'digitalnologin',
+  STATIC_PDF: 'staticpdf',
+  PAPER_NO_COVER_PAGE: 'papernocoverpage',
+};
+
 const extractVisibleText = (form) => {
   const items = new Map();
   const identityCounts = new Map();
@@ -258,23 +266,16 @@ const extractVisibleText = (form) => {
   const submissionMethods = submissionTypes
     ? [
         ...new Set(
-          submissionTypes
-            .map((type) => {
-              switch (String(type).toUpperCase()) {
-                case 'PAPER':
-                  return 'paper';
-                case 'DIGITAL':
-                  return 'digital';
-                case 'DIGITAL_NO_LOGIN':
-                  return 'digitalnologin';
-                default:
-                  return undefined;
-              }
-            })
-            .filter(Boolean),
+          submissionTypes.map((type) => {
+            const normalizedType = String(type).toUpperCase();
+            const method = submissionMethodByType[normalizedType];
+            if (!method) throw new Error(`Unsupported submission type: ${type}`);
+            return method;
+          }),
         ),
       ]
     : ['paper'];
+  const formSubmissionMethods = submissionMethods.filter((method) => method !== 'staticpdf');
   const put = (identity, field, source, metadata) => {
     if (typeof source !== 'string' || !source.trim()) return;
     items.set(`${identity}|${field}`, {
@@ -304,28 +305,44 @@ const extractVisibleText = (form) => {
       ? withCondition(metadata, 'submissionMethod', methods.join(' eller '))
       : metadata;
   const extractConfiguredComponentText = (component, identity, metadata) => {
-    if (submissionMethods.length === 0) return;
+    if (formSubmissionMethods.length === 0) return;
 
     if (component.type === 'sender') {
       const role = component.senderRole ?? 'person';
       const labels = component.customLabels ?? {};
       const descriptions = component.descriptions ?? {};
+      const senderMetadata = forSubmissionMethods(metadata, formSubmissionMethods);
       if (role === 'organization') {
-        put(identity, 'sender:organizationNumber', labels.organizationNumber, metadata);
-        put(identity, 'sender:organizationName', labels.organizationName, metadata);
-        put(identity, 'description:organizationNumber', descriptions.organizationNumber, metadata);
+        put(identity, 'sender:organizationNumber', labels.organizationNumber, senderMetadata);
+        put(identity, 'sender:organizationName', labels.organizationName, senderMetadata);
+        put(
+          identity,
+          'description:organizationNumber',
+          descriptions.organizationNumber,
+          senderMetadata,
+        );
       } else {
-        put(identity, 'sender:nationalIdentityNumber', labels.nationalIdentityNumber, metadata);
-        put(identity, 'sender:firstName', labels.firstName, metadata);
-        put(identity, 'sender:surname', labels.surname, metadata);
-        put(identity, 'description:nationalIdentityNumber', descriptions.nationalIdentityNumber, metadata);
+        put(
+          identity,
+          'sender:nationalIdentityNumber',
+          labels.nationalIdentityNumber,
+          senderMetadata,
+        );
+        put(identity, 'sender:firstName', labels.firstName, senderMetadata);
+        put(identity, 'sender:surname', labels.surname, senderMetadata);
+        put(
+          identity,
+          'description:nationalIdentityNumber',
+          descriptions.nationalIdentityNumber,
+          senderMetadata,
+        );
       }
     }
 
     if (component.type === 'identity') {
       const interactiveMethods = component.prefillKey
-        ? submissionMethods.filter((method) => method !== 'digital')
-        : submissionMethods;
+        ? formSubmissionMethods.filter((method) => method !== 'digital')
+        : formSubmissionMethods;
       if (interactiveMethods.length === 0) return;
 
       put(
@@ -338,9 +355,11 @@ const extractVisibleText = (form) => {
 
     if (component.type === 'navAddress') {
       const showsAddressTypeChoice = component.prefillKey
-        ? submissionMethods.filter((method) => method === 'paper' || method === 'digitalnologin')
+        ? formSubmissionMethods.filter(
+            (method) => method === 'paper' || method === 'digitalnologin',
+          )
         : component.addressTypeWizard === 'user'
-          ? submissionMethods
+          ? formSubmissionMethods
           : [];
       if (showsAddressTypeChoice.length === 0) return;
 
