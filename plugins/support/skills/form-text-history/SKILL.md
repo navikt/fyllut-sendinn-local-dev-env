@@ -124,8 +124,8 @@ report. If Node.js is unavailable, stop and report that the generation is
 blocked; do not create the report manually or substitute an ad hoc script.
 
 Always use the bundled `scripts/generate-form-text-history.mjs` generator. It
-produces the evidence and the standalone report from the same normalized
-history model.
+produces the form-owned evidence and the standalone report from the same
+normalized history model.
 
 Run it with Node.js:
 
@@ -157,14 +157,19 @@ Optional options:
 The generator discovers paired form and translation commits through their
 shared monorepo reference. It also checks global Nynorsk and English resource
 commits and keeps only changes that affected an active form text. Its report
-text is Norwegian. It expands renderer-owned text for the `sender`, `identity`,
-and `addressValidity` components, including conditional subfields that are not
-stored as ordinary Form.io labels. Component identity follows `navId`, the
-stable identifier used by all component types, so key renames and structural
-moves do not appear as wording changes. A type-and-key fallback covers legacy
-components without `navId`. Inspect the generated report and supplement the
-method section if a repository version uses rendering rules or custom
-components the script does not yet cover.
+text is Norwegian. It includes form-owned labels and descriptions configured
+for composite components, but it does not copy current renderer-owned static
+text into historical snapshots. Component identity follows `navId`, the stable
+identifier used by all component types, so key renames and structural moves do
+not appear as wording changes. A type-and-key fallback covers legacy components
+without `navId`.
+
+Inspect the renderer separately for static text owned by a custom component.
+Include that text only when repository and deployment evidence identifies the
+renderer version used at the relevant time. Do not treat the current renderer
+wording as historical evidence or paste renderer literals into the generator.
+Document any separately established renderer text and its source revision in
+the report method.
 
 ## Create the HTML report
 
@@ -190,7 +195,8 @@ Include:
 - a chronological publication and change timeline
 - global translation changes that affected the form without a form publication
 - before-and-after text in every language actually published in each snapshot
-- a searchable full inventory of all user-visible text during the interval
+- a searchable inventory of user-visible text stored in the form definition
+  during the interval
 - filters for language, changed versus unchanged text, and form section
 - visible markers for changed, unchanged, conditional, and missing translation
   states
