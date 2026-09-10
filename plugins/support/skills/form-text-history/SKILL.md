@@ -119,9 +119,13 @@ changed, say so directly and cite the relevant commits.
 
 ## Generate the report
 
-When Node.js is available, use the bundled
-`scripts/generate-form-text-history.mjs` generator. It produces a consistent
-standalone report and should be the normal path.
+Node.js is required. Confirm that `node --version` succeeds before starting the
+report. If Node.js is unavailable, stop and report that the generation is
+blocked; do not create the report manually or substitute an ad hoc script.
+
+Always use the bundled `scripts/generate-form-text-history.mjs` generator. It
+produces the form-owned evidence and the standalone report from the same
+normalized history model.
 
 Run it with Node.js:
 
@@ -153,30 +157,21 @@ Optional options:
 The generator discovers paired form and translation commits through their
 shared monorepo reference. It also checks global Nynorsk and English resource
 commits and keeps only changes that affected an active form text. Its report
-text is Norwegian. Inspect the generated report and supplement the method
-section if a repository version uses rendering rules the script does not yet
-cover.
+text is Norwegian. It includes form-owned labels and descriptions configured
+for composite components, but it does not copy current renderer-owned static
+text into historical snapshots. Component identity follows `navId`, the stable
+identifier used by all component types, so key renames and structural moves do
+not appear as wording changes. A type-and-key fallback covers legacy components
+without `navId`. Submission-method visibility recognizes `PAPER`, `DIGITAL`,
+`DIGITAL_NO_LOGIN`, `STATIC_PDF`, and `PAPER_NO_COVER_PAGE` as distinct
+submission types.
 
-### Fallback when Node.js is unavailable
-
-Do not stop because Node.js is missing. Use the published repository history,
-the FyllUt renderer, and the instructions in this skill to create the
-standalone HTML report directly. Preserve the same evidence standard:
-
-1. Use `git log`, `git show`, and `git diff` to establish the baseline,
-   published-language states, paired publications, and relevant global
-   translation changes.
-2. Extract visible text by component identity and field, then resolve only the
-   languages listed in the form's top-level `publishedLanguages` field at each
-   snapshot.
-3. Create the HTML with the required summary, published-language status,
-   timeline, inventory, filters, fallback explanations, and commit links.
-4. State in the method section that the report was produced without the
-   generator, name the commands used to inspect history, and verify the same
-   report requirements listed below.
-
-The fallback needs Git and a way to write a local HTML file, but it does not
-need Node.js or external packages.
+Inspect the renderer separately for static text owned by a custom component.
+Include that text only when repository and deployment evidence identifies the
+renderer version used at the relevant time. Do not treat the current renderer
+wording as historical evidence or paste renderer literals into the generator.
+Document any separately established renderer text and its source revision in
+the report method.
 
 ## Create the HTML report
 
@@ -202,7 +197,8 @@ Include:
 - a chronological publication and change timeline
 - global translation changes that affected the form without a form publication
 - before-and-after text in every language actually published in each snapshot
-- a searchable full inventory of all user-visible text during the interval
+- a searchable inventory of user-visible text stored in the form definition
+  during the interval
 - filters for language, changed versus unchanged text, and form section
 - visible markers for changed, unchanged, conditional, and missing translation
   states
