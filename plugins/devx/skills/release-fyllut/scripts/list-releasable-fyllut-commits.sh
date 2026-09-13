@@ -9,17 +9,6 @@ readonly repository="navikt/skjemabygging-formio"
 readonly workflow="build-and-test.yaml"
 readonly target_repository="navikt/skjemautfylling-formio"
 
-workspace_root="${FYLLUT_RELEASE_WORKSPACE_ROOT:-$PWD}"
-source_repository="${workspace_root}/skjemabygging-formio"
-
-if ! git -C "$source_repository" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  printf 'Could not find skjemabygging-formio at %s. Run from the workspace root or set FYLLUT_RELEASE_WORKSPACE_ROOT.\n' \
-    "$source_repository" >&2
-  exit 1
-fi
-
-git -C "$source_repository" fetch origin main
-
 if ! current_monorepo_sha="$(
   gh api "repos/${target_repository}/contents/MONOREPO?ref=${target_branch}" \
     --jq .content | base64 --decode
@@ -36,6 +25,14 @@ if ! [[ "$current_monorepo_sha" =~ ^[0-9a-f]{40}$ ]]; then
 fi
 
 printf 'Current MONOREPO on %s: %s\n\n' "$target_branch" "$current_monorepo_sha"
+
+if ! commit_shas="$(
+  gh api "repos/${repository}/commits?sha=main&per_page=${scan_limit}" --jq '.[].sha'
+)"; then
+  printf 'Could not read main commits from %s. Check GitHub access and stop.\n' \
+    "$repository" >&2
+  exit 1
+fi
 
 listed_count=0
 
@@ -54,8 +51,16 @@ while read -r sha; do
   fi
 
   if [ "$run_status" = true ]; then
-    git -C "$source_repository" show -s \
-      --pretty=format:'%H%n%ad%n%an%n%s%n' --date=short "$sha"
+    if ! commit_details="$(
+      gh api "repos/${repository}/commits/${sha}" \
+        --jq '[.sha, (.commit.author.date | split("T")[0]), .commit.author.name, (.commit.message | split("\n")[0])] | .[]'
+    )"; then
+      printf 'Could not read commit details for %s. Check GitHub access and stop.\n' \
+        "$sha" >&2
+      exit 1
+    fi
+
+    printf '%s\n' "$commit_details"
 
     if [ "$sha" = "$current_monorepo_sha" ]; then
       printf 'Currently deployed on %s\n' "$target_branch"
@@ -73,4 +78,4 @@ while read -r sha; do
       "$sha" >&2
     exit 1
   fi
-done < <(git -C "$source_repository" log origin/main "-${scan_limit}" --format='%H')
+done <<< "$commit_shas"
