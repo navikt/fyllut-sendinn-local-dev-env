@@ -9,9 +9,14 @@ readonly repository="navikt/skjemabygging-formio"
 readonly workflow="build-and-test.yaml"
 readonly target_repository="navikt/skjemautfylling-formio"
 
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-plugin_repository="$(git -C "$script_dir" rev-parse --show-toplevel)"
-source_repository="$(dirname "$plugin_repository")/skjemabygging-formio"
+workspace_root="${FYLLUT_RELEASE_WORKSPACE_ROOT:-$PWD}"
+source_repository="${workspace_root}/skjemabygging-formio"
+
+if ! git -C "$source_repository" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  printf 'Could not find skjemabygging-formio at %s. Run from the workspace root or set FYLLUT_RELEASE_WORKSPACE_ROOT.\n' \
+    "$source_repository" >&2
+  exit 1
+fi
 
 git -C "$source_repository" fetch origin main
 
