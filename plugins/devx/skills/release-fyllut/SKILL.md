@@ -12,7 +12,8 @@ metadata:
 Publish a specific `skjemabygging-formio` commit by dispatching
 `release-fyllut.yaml` in `skjemautfylling-formio`.
 
-Run the commands from the `ws-innsending` workspace root.
+Run the commands from any directory with an authenticated `gh` CLI. The skill
+does not require a local checkout of either repository.
 
 ## Branch conventions
 
@@ -23,13 +24,7 @@ name another target branch, such as `test-publishing`.
 
 ## Choose the source commit
 
-1. Fetch the latest `main` branch in `skjemabygging-formio`:
-
-   ```bash
-   git -C skjemabygging-formio fetch origin main
-   ```
-
-2. Ask for the `skjemautfylling-formio` target branch before listing candidates.
+1. Ask for the `skjemautfylling-formio` target branch before listing candidates.
    Use `master` unless the user specifies another branch. List up to five recent
    commits whose `build-and-test.yaml` workflow completed successfully:
 
@@ -45,7 +40,7 @@ name another target branch, such as `test-publishing`.
    candidate as currently deployed. It omits commits without a successful run
    and exits with an error if it cannot access GitHub.
 
-3. Present the script's output and ask the user to confirm one. Do not offer
+2. Present the script's output and ask the user to confirm one. Do not offer
    commits without a successful build. Do not dispatch the workflow until the
    user confirms the selected full 40-character SHA.
 
@@ -72,18 +67,19 @@ Compare the returned full SHA with the selected commit before dispatching:
 - If the current `MONOREPO` commit is a descendant of the selected commit, the
   selected commit is older. Give an explicit rollback warning that includes both
   full SHAs, and ask the user to confirm the rollback before dispatching.
-- If Git cannot compare the two commits, tell the user that their order is
+- If GitHub cannot compare the two commits, tell the user that their order is
   unknown. Do not describe it as a rollback.
 
-Use Git ancestry to determine whether the selected commit is older:
+Use GitHub's compare API to determine whether the selected commit is older:
 
 ```bash
-git -C skjemabygging-formio merge-base --is-ancestor \
-  <selected-full-sha> <current-monorepo-full-sha>
+gh api \
+  "repos/navikt/skjemabygging-formio/compare/<selected-full-sha>...<current-monorepo-full-sha>" \
+  --jq .status
 ```
 
-This command exits successfully when the current `MONOREPO` commit is newer
-than the selected commit. Skip this comparison when the SHAs already match.
+The selected commit is older when this command returns `behind`. Skip this
+comparison when the SHAs already match.
 
 Dispatch the workflow with the selected full SHA. The workflow must run from the
 target branch so its generated commit is pushed there:
