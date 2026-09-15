@@ -29,7 +29,7 @@
     {
       "name": "devx",
       "description": "Developer experience helpers for writing, commits, and pull request follow-up.",
-      "version": "0.2.0",
+      "version": "0.3.1",
       "source": "plugins/devx"
     }
   ]
