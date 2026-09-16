@@ -68,16 +68,16 @@ sbx settings set kit.allowedSources '["docker.io/","github.com/navikt/"]'
 ```
 
 ```sh
-sbx run innsending-copilot --name ws1 --kit "git+https://github.com/navikt/fyllut-sendinn-local-dev-env.git#dir=sbx/kits/copilot"
+sbx run "git+https://github.com/navikt/fyllut-sendinn-local-dev-env.git#dir=sbx/kits/copilot" --name ws1
 ```
 
-`innsending-copilot` is the agent name defined by the kit, while `ws1` is the name of the sandbox. The kit only needs to be specified when the sandbox is created. To run the same sandbox later, omit `--kit`:
+The kit reference is the first argument because it defines a complete sandbox. The `--kit` option is only for mixin kits as of Docker Sandboxes 0.42.0. `ws1` is the name of the sandbox. The kit only needs to be specified when the sandbox is created. To run the same sandbox later, use its name:
 
 ```sh
-sbx run innsending-copilot --name ws1
+sbx run --name ws1
 ```
 
-The agent name remains `innsending-copilot` because kits cannot override the built-in `copilot` agent. Local kits require `kit.allowLocalKits` to be `true`, which is the default.
+Local kits require `kit.allowLocalKits` to be `true`, which is the default.
 
 ### Manual setup (without kit)
 

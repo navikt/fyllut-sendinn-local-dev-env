@@ -28,5 +28,5 @@ else
   set --
 fi
 
-sbx run innsending-copilot --kit ./sbx/kits/copilot/ "$@"
+sbx run ./sbx/kits/copilot/ "$@"
 '''
