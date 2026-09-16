@@ -10,27 +10,97 @@ description: >-
   GitHub Copilot CLI for fyllut/sendinn local development, with the network
   policy our repos need pre-approved.
 
-# Copilot moved from a built-in agent to a public kit in Docker Sandboxes 0.43.
-# Use its explicit OCI reference so this remotely loaded kit does not resolve
-# the bare name relative to its own source as agents/copilot/spec.yml.
-# Extending it inherits the credentials, network policy, entrypoint and agent
-# instructions; everything below is layered on top.
-extends: "oci://docker.io/sbx/copilot-kit@sha256:bde43a043cd74fd6b02c6aec1c830dbe61a0a22353bc283a96e19fda698a405b"
-
 sandbox:
   # Built from sbx/templates/Dockerfile.sbx-copilot (FROM copilot-docker), which
   # adds mise plus the Cypress runtime libraries. Build it before use:
   #   docker build -f sbx/templates/Dockerfile.sbx-copilot sbx/templates -t innsending-sbx-copilot
   image: "innsending-sbx-copilot:latest"
+  entrypoint: [copilot, "--yolo"]
+
+credentials:
+  - service: github
+    apiKey:
+      name: GH_TOKEN
+      inject:
+        - domain: api.github.com
+          header: Authorization
+          format: "******"
+        - domain: github.com
+          header: Authorization
+          format: "******"
+  - service: copilot
+    apiKey:
+      name: COPILOT_GITHUB_TOKEN
+      inject:
+        - domain: api.business.githubcopilot.com
+          header: Authorization
+          format: "******"
+        - domain: api.enterprise.githubcopilot.com
+          header: Authorization
+          format: "******"
+        - domain: api.githubcopilot.com
+          header: Authorization
+          format: "******"
+        - domain: api.individual.githubcopilot.com
+          header: Authorization
+          format: "******"
+        - domain: copilot.github.com
+          header: Authorization
+          format: "******"
 
 setup:
+  install:
+    - command: mkdir -p /home/agent/.copilot && chown agent:agent /home/agent/.copilot
+      user: "0"
+      description: Ensure .copilot is owned by the agent
   startup:
+    - command:
+        - sh
+        - -c
+        - |
+          set -e
+          [ -n "$MCP_GATEWAY_URL" ] || exit 0
+          mkdir -p "$HOME/.copilot"
+          cat > "$HOME/.copilot/mcp-config.json" <<EOF
+          {
+            "mcpServers": {
+              "mcp-gateway": {
+                "type": "http",
+                "url": "$MCP_GATEWAY_URL",
+                "headers": {
+                  "Authorization": "******"
+                },
+                "tools": ["*"]
+              }
+            }
+          }
+          EOF
+      user: "agent"
+      description: Register the sandbox MCP gateway
     - command: ["bash", "-c", "gh extension list | grep -q 'github/gh-stack' || gh extension install github/gh-stack || true"]
     - command: ["bash", "-c", "gh extension upgrade --all"]
+  files:
+    - path: /home/agent/.copilot/config.json
+      content: '{"trusted_folders": ["${WORKDIR}"]}'
+      onlyIfMissing: true
+      description: Trust the sandbox workspace
 
 permissions:
   network:
     allow:
+      # --- GitHub and Copilot ---
+      - api.business.githubcopilot.com
+      - api.enterprise.githubcopilot.com
+      - api.github.com
+      - api.githubcopilot.com
+      - api.individual.githubcopilot.com
+      - copilot.github.com
+      - github.com
+      - archive.ubuntu.com
+      - security.ubuntu.com
+      - ports.ubuntu.com
+      - download.docker.com
+
       # --- Maven / Gradle / JVM builds ---
       - repo1.maven.org
       - archive.apache.org
@@ -71,3 +141,6 @@ permissions:
       - confluent.io
       - postgresql.org
       - typescript-eslint.io
+
+agentInstructions:
+  filename: AGENTS.md
