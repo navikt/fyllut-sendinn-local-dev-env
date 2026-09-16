@@ -20,7 +20,7 @@ Invoke `dependency-upgrade` before proceeding. That skill owns version eligibili
 - Give a major update its own PR at the top of the stack only when it has very high concrete risk or requires changes across many parts of the codebase.
 - Put all GitHub Actions updates in one PR at the bottom of the stack.
 - Put all Docker image updates in one separate major-change PR.
-- Put compatible application and build dependency patch and minor updates in one PR unless a meaningful breaking change makes that unsafe to review or validate.
+- Put compatible application, build, and transitive-only dependency patch and minor updates in one PR unless a meaningful breaking change makes that unsafe to review or validate.
 - Complete the `dependency-upgrade` workflow for each layer, including required checks, before adding the next layer.
 - Do not merge the stack unless the user asks.
 
@@ -32,21 +32,35 @@ Start from the target repository and:
 2. Query open Dependabot or Renovate PRs and inspect their diffs.
 3. Build a current-version inventory from manifests, lockfiles, Docker files, Compose files, and workflow action references.
 4. Re-query registries and upstream releases to find eligible targets.
-5. Record the package family, update type, expected risk, and bot PR coverage for every direct update.
+5. Record the package family, update type, expected risk, and bot PR coverage for every direct update and every eligible transitive-only update found in a bot PR.
 
 Do not copy stale bot targets. Include eligible direct updates even when no bot PR exists.
+
+Eligible transitive-only bot updates are part of the stack scope. A targeted
+direct dependency upgrade may leave an older transitive version in the lockfile
+when the ancestor still declares the same compatible range. Do not assume the
+package manager refreshed that path just because its ancestor was upgraded.
+Explicitly update the transitive package through the package manager, then
+include any sibling or child lockfile changes required by that exact dependency
+path.
 
 ## Decide the stack
 
 Use this order, omitting empty groups:
 
 1. GitHub Actions
-2. Compatible application and build dependency patch and minor updates
+2. Compatible application, build, and transitive-only dependency patch and minor updates
 3. Docker images and runtimes
 4. Major application and build dependency updates
 5. Any exceptional major update that needs its own PR
 
 The major layer may exceed the three-direct-dependency limit in `dependency-upgrade`. Keep dependencies that require each other in one commit. Otherwise, commit each dependency separately so reviewers can inspect and revert it without splitting the PR.
+
+In the compatible patch and minor layer, commit independent transitive-only
+updates separately from direct dependency updates. Group a transitive package
+with its required sibling or child lockfile changes, and name the transitive
+package in the commit. This makes lockfile-only bot replacements visible and
+revertible.
 
 Do not split a major update merely because it can upgrade independently. Split it only when the risk assessment identifies a very high-risk failure mode or the migration touches many different parts of the code. Put each exception above the grouped major layer and explain the decision in both PR descriptions.
 
