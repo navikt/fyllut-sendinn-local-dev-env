@@ -17,7 +17,7 @@ NAV recommends [cplt](https://github.com/navikt/cplt) for running agents in a sa
    mise run sandbox:build
    ```
 
-The image extends Docker's [Copilot template](https://docs.docker.com/ai/sandboxes/customize/templates/) with a nested Docker engine, Cypress dependencies, and [mise](https://mise.jdx.dev/) for managing project-specific tool versions.
+The image extends Docker's [Copilot template](https://docs.docker.com/ai/sandboxes/customize/templates/) with a nested Docker engine, Cypress dependencies, and [mise](https://mise.jdx.dev/) for managing project-specific tool versions. The kit extends a digest-pinned release of Docker's public `docker.io/sbx/copilot-kit` kit to inherit Copilot's credentials, network policy, entrypoint, and agent instructions.
 
 ## Development in this repository
 
@@ -78,6 +78,12 @@ sbx run --name ws1
 ```
 
 Local kits require `kit.allowLocalKits` to be `true`, which is the default.
+
+The kit contains an explicit OCI parent reference because Copilot moved from a
+built-in agent to a public kit in Docker Sandboxes 0.43. A missing
+`agents/copilot/spec.yml` error means an older revision with
+`extends: copilot` is being loaded; it is unrelated to relative paths in
+`sbxenv.yaml`.
 
 ### Manual setup (without kit)
 

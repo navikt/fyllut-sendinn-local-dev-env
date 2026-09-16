@@ -10,12 +10,12 @@ description: >-
   GitHub Copilot CLI for fyllut/sendinn local development, with the network
   policy our repos need pre-approved.
 
-# `copilot` is the built-in sandbox kit for Copilot CLI, and it already resolves
-# to the Docker-in-Docker flavour (`docker/sandbox-templates:copilot-docker`).
-# Extending it inherits the parent's credentials (GH_TOKEN, COPILOT_GITHUB_TOKEN),
-# network allow list, volumes, entrypoint and agent instructions; everything
-# below is layered on top.
-extends: copilot
+# Copilot moved from a built-in agent to a public kit in Docker Sandboxes 0.43.
+# Use its explicit OCI reference so this remotely loaded kit does not resolve
+# the bare name relative to its own source as agents/copilot/spec.yml.
+# Extending it inherits the credentials, network policy, entrypoint and agent
+# instructions; everything below is layered on top.
+extends: "oci://docker.io/sbx/copilot-kit@sha256:bde43a043cd74fd6b02c6aec1c830dbe61a0a22353bc283a96e19fda698a405b"
 
 sandbox:
   # Built from sbx/templates/Dockerfile.sbx-copilot (FROM copilot-docker), which
