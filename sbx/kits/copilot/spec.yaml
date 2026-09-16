@@ -41,6 +41,7 @@ permissions:
       # --- mise toolchain manager (installed in the image, resolves runtimes at run time) ---
       - mise.run
       - mise-java.jdx.dev
+      - mise.jdx.dev
       - mise-versions.jdx.dev
       - nodejs.org
       - api.adoptium.net
@@ -53,12 +54,20 @@ permissions:
       #     --env NODE_AUTH_TOKEN --value "$PACKAGE_TOKEN"
       - npm.pkg.github.com
 
-      # --- Cypress ---
-      - "**.cypress.io"
-
-      # --- Nav design system / runtime assets pulled by the frontends ---
+      # --- Nav design system / runtime assets pulled by the frontends / Nais doc ---
       - "**.nav.no"
+      - "**.nais.io"
 
-      # --- React / Next.js ---
+      # --- 3rd party ---
+      - "**.cypress.io"
+      - eslint.org
       - react.dev
       - nextjs.org
+      - junit.org
+      - apache.org
+      - kotlinlang.org
+      - openjdk.org
+      - wiremock.org
+      - confluent.io
+      - postgresql.org
+      - typescript-eslint.io
