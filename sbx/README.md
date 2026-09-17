@@ -30,18 +30,18 @@ OpenCode, T3 Code, and other agents that use a Debian-based image.
    sbx secret set github --command 'gh auth token'
    ```
 
-3. Configure Copilot's separate credential. Create a
-   [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new)
-   owned by your personal account with the account-level **Copilot Requests**
-   permission, then store it when prompted:
+3. Configure Copilot's separate credential using the token from the host's
+   authenticated GitHub CLI:
 
    ```sh
-   sbx secret set copilot
+   sbx secret set copilot --command 'gh auth token'
    ```
 
    The built-in Copilot kit uses `GH_TOKEN` for GitHub and
-   `COPILOT_GITHUB_TOKEN` for the Copilot API. One token should not be used for
-   both services.
+   `COPILOT_GITHUB_TOKEN` for the Copilot API. Both services may resolve the
+   same host token, but they remain separate so the proxy injects it only into
+   the domains declared for each service. The token must belong to an account
+   with an active Copilot subscription.
 
 4. Allow kits from this repository's GitHub organization in addition to Docker
    Hub:
