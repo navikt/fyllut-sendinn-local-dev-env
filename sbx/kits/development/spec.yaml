@@ -66,6 +66,9 @@ environment:
   variables:
     # Copilot CLI's bundled ripgrep is incompatible with 16 KB arm64 pages.
     USE_BUILTIN_RIPGREP: "false"
+    # Opencode: disable telemetry
+    OMO_DISABLE_POSTHOG: "1"
+    OMO_SEND_ANONYMOUS_TELEMETRY: "0"
 
 permissions:
   network:
