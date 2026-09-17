@@ -192,21 +192,28 @@ The output should include global `github` and `copilot` service secrets. Run
 sbx policy log
 ```
 
-If `github` is configured but `gh auth status` still fails because GitHub
-requests use `forward-bypass`, pass the host's real GitHub token into the agent
-session:
+If both services are configured but requests still use `forward-bypass`, pass
+the host's real GitHub token into the agent session as both variables. Copilot
+CLI prioritizes `COPILOT_GITHUB_TOKEN`, while `gh` uses `GH_TOKEN`:
 
 ```sh
-GH_TOKEN="$(gh auth token)" sbx run --name <sandbox-name> -e GH_TOKEN
+export GH_TOKEN="$(gh auth token)"
+export COPILOT_GITHUB_TOKEN="$GH_TOKEN"
+sbx run --name <sandbox-name> -e GH_TOKEN -e COPILOT_GITHUB_TOKEN
+unset GH_TOKEN COPILOT_GITHUB_TOKEN
 ```
 
 For a new sandbox, pass it during creation:
 
 ```sh
-GH_TOKEN="$(gh auth token)" sbx create opencode /path/to/workspace \
+export GH_TOKEN="$(gh auth token)"
+export COPILOT_GITHUB_TOKEN="$GH_TOKEN"
+sbx create copilot /path/to/workspace \
   --name <sandbox-name> \
   -e GH_TOKEN \
+  -e COPILOT_GITHUB_TOKEN \
   --kit "git+https://github.com/navikt/fyllut-sendinn-local-dev-env.git#dir=sbx/kits/development"
+unset GH_TOKEN COPILOT_GITHUB_TOKEN
 ```
 
 This workaround weakens the sandbox's credential isolation. The real token is
