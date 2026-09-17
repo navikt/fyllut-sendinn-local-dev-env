@@ -1,3 +1,7 @@
 [tasks."sandbox:validate"]
 description = "Validate the development dependency mixin kit"
 run = "sbx kit validate ./sbx/kits/development/"
+
+[tasks."sandbox:test"]
+description = "Test the development dependency mixin scripts"
+run = "sh ./sbx/kits/development/tests/sync-opencode-skills.sh"

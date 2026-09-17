@@ -93,6 +93,9 @@ permissions:
       - "**.npmjs.org"
       - npm.pkg.github.com
 
+      # Git repositories and GitHub CLI extensions
+      - github.com
+
       # Nav design system, runtime assets, and Nais documentation
       - "**.nav.no"
       - "**.nais.io"

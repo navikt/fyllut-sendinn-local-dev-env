@@ -25,11 +25,12 @@ CLI. In a Copilot sandbox, the marketplace and all four plugins are installed
 during creation and updated whenever the sandbox starts.
 
 In an OpenCode sandbox, the mixin clones this repository and links every plugin
-skill into `~/.config/opencode/skills`. The bundled synchronization script
-fast-forwards the clone and reconciles managed links whenever the sandbox
-starts. Complete skill directories are linked so bundled scripts and reference
-files remain available. Restart OpenCode after an update to discover newly
-added skills.
+skill into `~/.agents/skills`. Docker Sandboxes mounts
+`~/.config/opencode/skills` read-only, while OpenCode also discovers the
+agent-compatible directory. The bundled synchronization script fast-forwards
+the clone and reconciles managed links whenever the sandbox starts. Complete
+skill directories are linked so bundled scripts and reference files remain
+available. Restart OpenCode after an update to discover newly added skills.
 
 ## Setup
 

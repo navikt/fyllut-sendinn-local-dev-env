@@ -2,7 +2,7 @@
 set -eu
 
 repo="$HOME/.local/share/fyllut-sendinn-local-dev-env"
-skills_dir="$HOME/.config/opencode/skills"
+skills_dir="$HOME/.agents/skills"
 manifest="$skills_dir/.fyllut-sendinn-managed"
 
 command -v opencode >/dev/null 2>&1 || exit 0
@@ -20,6 +20,18 @@ mkdir -p "$skills_dir"
 next_manifest=$(mktemp)
 trap 'rm -f "$next_manifest"' EXIT
 
+is_managed_link() {
+  name=$1
+  target=$2
+  expected=$3
+
+  if [ -f "$manifest" ] && grep -qxF "$name" "$manifest"; then
+    return 0
+  fi
+
+  [ "$(readlink "$target")" = "$expected" ]
+}
+
 for plugin_skills in "$repo"/plugins/*/skills; do
   [ -d "$plugin_skills" ] || continue
   for skill in "$plugin_skills"/*; do
@@ -31,7 +43,8 @@ for plugin_skills in "$repo"/plugins/*/skills; do
       echo "Duplicate OpenCode skill name: $name" >&2
       exit 1
     fi
-    if [ -e "$target" ] && [ ! -L "$target" ]; then
+    if { [ -e "$target" ] || [ -L "$target" ]; } &&
+      { [ ! -L "$target" ] || ! is_managed_link "$name" "$target" "$skill"; }; then
       echo "Refusing to replace unmanaged OpenCode skill: $target" >&2
       exit 1
     fi
