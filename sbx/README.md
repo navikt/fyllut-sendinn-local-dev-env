@@ -23,14 +23,27 @@ OpenCode, T3 Code, and other agents that use a Debian-based image.
 ## Setup
 
 1. [Install Docker Sandboxes](https://docs.docker.com/ai/sandboxes/install/).
-2. Sign in and configure the GitHub service credential:
+2. Sign in and configure the GitHub service credential used by `gh` and Git:
 
    ```sh
    sbx login
    sbx secret set github --command 'gh auth token'
    ```
 
-3. Allow kits from this repository's GitHub organization in addition to Docker
+3. Configure Copilot's separate credential. Create a
+   [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new)
+   owned by your personal account with the account-level **Copilot Requests**
+   permission, then store it when prompted:
+
+   ```sh
+   sbx secret set copilot
+   ```
+
+   The built-in Copilot kit uses `GH_TOKEN` for GitHub and
+   `COPILOT_GITHUB_TOKEN` for the Copilot API. One token should not be used for
+   both services.
+
+4. Allow kits from this repository's GitHub organization in addition to Docker
    Hub:
 
    ```sh
@@ -166,14 +179,21 @@ Docker Sandboxes v0.43.0 has an open
 [credential-proxy issue](https://github.com/docker/sbx-releases/issues/595)
 where requests to GitHub may use `forward-bypass`. In that case, `GH_TOKEN`
 contains a proxy placeholder that GitHub rejects as invalid. Confirm the
-problem by running `gh auth status` inside the sandbox and checking the host's
-policy log:
+problem only after confirming that both required service secrets exist:
+
+```sh
+sbx secret ls
+```
+
+The output should include global `github` and `copilot` service secrets. Run
+`gh auth status` inside the sandbox and check the host's policy log:
 
 ```sh
 sbx policy log
 ```
 
-Until Docker releases a fix, pass the host's real GitHub token into the agent
+If `github` is configured but `gh auth status` still fails because GitHub
+requests use `forward-bypass`, pass the host's real GitHub token into the agent
 session:
 
 ```sh
