@@ -39,9 +39,23 @@ setup:
         fi
       user: "1000"
       description: Configure npm to use the proxy-managed GitHub Packages token
+    - command: >-
+        if command -v copilot >/dev/null 2>&1; then
+          copilot plugin marketplace list --json |
+          jq -e '.[] | select(.name == "fyllut-sendinn-plugins")' >/dev/null ||
+          copilot plugin marketplace add navikt/fyllut-sendinn-local-dev-env;
+          for plugin in chores support specification devx; do
+            copilot plugin list --json |
+            jq -e --arg plugin "$plugin" '.[] | select(.name == $plugin and .marketplace == "fyllut-sendinn-plugins")' >/dev/null ||
+            copilot plugin install "$plugin@fyllut-sendinn-plugins";
+          done;
+        fi
+      user: "1000"
+      description: Install the FyllUt and SendInn Copilot plugins
   startup:
     - command: ["sh", "-c", "gh extension list | grep -q 'github/gh-stack' || gh extension install github/gh-stack"]
     - command: ["gh", "extension", "upgrade", "--all"]
+    - command: ["sh", "-c", "command -v copilot >/dev/null 2>&1 || exit 0; copilot plugin marketplace update fyllut-sendinn-plugins && copilot plugin update --all"]
 
 environment:
   variables:

@@ -14,11 +14,15 @@ repositories. It adds:
 - System packages required by the frontend tools and Cypress
 - [mise](https://mise.jdx.dev/) and its shims on `PATH`
 - The `github/gh-stack` GitHub CLI extension
+- The Copilot plugins published by this repository
 - The required network allow list
 - `USE_BUILTIN_RIPGREP=false` for Copilot CLI on arm64 hosts with 16 KB pages
 
 The mixin is separate from the agent. It can be combined with Copilot,
 OpenCode, T3 Code, and other agents that use a Debian-based image.
+Plugin setup is skipped when the selected agent image does not contain Copilot
+CLI. In a Copilot sandbox, the marketplace and all four plugins are installed
+during creation and updated whenever the sandbox starts.
 
 ## Setup
 

@@ -1,8 +1,8 @@
 # Copilot plugins
 
 This repository is a Copilot CLI plugin marketplace named
-`fyllut-sendinn-plugins`. It publishes the `chores`, `devx`, and
-`specification` plugins.
+`fyllut-sendinn-plugins`. It publishes the `chores`, `devx`, `specification`,
+and `support` plugins.
 
 ## Local development
 
@@ -12,6 +12,7 @@ Install the plugin directly while developing it:
 copilot plugin install ./plugins/chores
 copilot plugin install ./plugins/devx
 copilot plugin install ./plugins/specification
+copilot plugin install ./plugins/support
 ```
 
 Local plugin installs are cached. Run the same command again after changing the
@@ -37,7 +38,9 @@ Add `.github/copilot/settings.json` to the consuming repository:
   },
   "enabledPlugins": {
     "chores@fyllut-sendinn-plugins": true,
-    "devx@fyllut-sendinn-plugins": true
+    "devx@fyllut-sendinn-plugins": true,
+    "specification@fyllut-sendinn-plugins": true,
+    "support@fyllut-sendinn-plugins": true
   }
 }
 ```
@@ -53,6 +56,7 @@ copilot plugin marketplace add navikt/fyllut-sendinn-local-dev-env
 copilot plugin install chores@fyllut-sendinn-plugins
 copilot plugin install devx@fyllut-sendinn-plugins
 copilot plugin install specification@fyllut-sendinn-plugins
+copilot plugin install support@fyllut-sendinn-plugins
 ```
 
 ## Automatic updates
@@ -86,6 +90,7 @@ To update manually:
 copilot plugin update chores@fyllut-sendinn-plugins
 copilot plugin update devx@fyllut-sendinn-plugins
 copilot plugin update specification@fyllut-sendinn-plugins
+copilot plugin update support@fyllut-sendinn-plugins
 ```
 
 When publishing a change, increment the plugin version in both its
