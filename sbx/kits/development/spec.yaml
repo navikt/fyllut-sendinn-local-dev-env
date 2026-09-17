@@ -53,14 +53,14 @@ setup:
         fi
       user: "1000"
       description: Install the FyllUt and SendInn Copilot plugins
-    - command: "/home/agent/.local/bin/sync-fyllut-sendinn-opencode-skills"
+    - command: "sh /home/agent/.local/bin/sync-fyllut-sendinn-opencode-skills"
       user: "1000"
       description: Install the FyllUt and SendInn skills for OpenCode
   startup:
     - command: ["sh", "-c", "gh extension list | grep -q 'github/gh-stack' || gh extension install github/gh-stack"]
     - command: ["gh", "extension", "upgrade", "--all"]
     - command: ["sh", "-c", "command -v copilot >/dev/null 2>&1 || exit 0; copilot plugin marketplace update fyllut-sendinn-plugins && copilot plugin update --all"]
-    - command: ["/home/agent/.local/bin/sync-fyllut-sendinn-opencode-skills"]
+    - command: ["sh", "/home/agent/.local/bin/sync-fyllut-sendinn-opencode-skills"]
 
 environment:
   variables:
