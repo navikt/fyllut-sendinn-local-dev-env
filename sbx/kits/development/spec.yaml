@@ -1,0 +1,115 @@
+schemaVersion: "2"
+kind: mixin
+name: innsending-development
+version: "1.0.0"
+displayName: FyllUt and SendInn development dependencies
+description: >-
+  System packages and network access required for local development in the
+  FyllUt and SendInn repositories.
+
+setup:
+  install:
+    - command: >-
+        apt-get update &&
+        apt-get install -y
+        curl
+        git
+        jq
+        ripgrep
+        xvfb
+        libglib-2.0
+        libdbus-1-3
+        libatk1.0-0
+        libatk-bridge2.0-0t64
+        libcups2
+        libcairo2
+        libgtk-3-0
+        libasound2t64 &&
+        rm -rf /var/lib/apt/lists/*
+    - command: "curl https://mise.run | sh"
+      user: "1000"
+      description: Install mise for the agent user
+    - command: >-
+        printf '%s\n'
+        'export PATH="/home/agent/.local/bin:/home/agent/.local/share/mise/shims:$PATH"'
+        >> /etc/sandbox-persistent.sh
+      description: Add mise and its shims to PATH
+    - command: >-
+        if [ -n "${NODE_AUTH_TOKEN:-}" ] && command -v npm >/dev/null 2>&1; then
+          npm config set "//npm.pkg.github.com/:_authToken" "$NODE_AUTH_TOKEN" --location=user;
+        fi
+      user: "1000"
+      description: Configure npm to use the proxy-managed GitHub Packages token
+    - command: >-
+        if command -v copilot >/dev/null 2>&1; then
+          copilot plugin marketplace list --json |
+          jq -e '.[] | select(.name == "fyllut-sendinn-plugins")' >/dev/null ||
+          copilot plugin marketplace add navikt/fyllut-sendinn-local-dev-env;
+          for plugin in chores support specification devx; do
+            copilot plugin list --json |
+            jq -e --arg plugin "$plugin" '.[] | select(.name == $plugin and .marketplace == "fyllut-sendinn-plugins")' >/dev/null ||
+            copilot plugin install "$plugin@fyllut-sendinn-plugins";
+          done;
+        fi
+      user: "1000"
+      description: Install the FyllUt and SendInn Copilot plugins
+    - command: "sh /home/agent/.local/bin/sync-fyllut-sendinn-opencode-skills"
+      user: "1000"
+      description: Install the FyllUt and SendInn skills for OpenCode
+  startup:
+    - command: ["sh", "-c", "gh extension list | grep -q 'github/gh-stack' || gh extension install github/gh-stack"]
+    - command: ["gh", "extension", "upgrade", "--all"]
+    - command: ["sh", "-c", "command -v copilot >/dev/null 2>&1 || exit 0; copilot plugin marketplace update fyllut-sendinn-plugins && copilot plugin update --all"]
+    - command: ["sh", "/home/agent/.local/bin/sync-fyllut-sendinn-opencode-skills"]
+
+environment:
+  variables:
+    # Copilot CLI's bundled ripgrep is incompatible with 16 KB arm64 pages.
+    USE_BUILTIN_RIPGREP: "false"
+    # Opencode: disable telemetry
+    OMO_DISABLE_POSTHOG: "1"
+    OMO_SEND_ANONYMOUS_TELEMETRY: "0"
+
+permissions:
+  network:
+    allow:
+      # Maven / Gradle / JVM builds
+      - repo1.maven.org
+      - archive.apache.org
+      - packages.confluent.io
+      # Nav's package and registry proxy for JVM and npm builds
+      - github-package-registry-mirror.gc.nav.no
+
+      # mise toolchain manager and runtime downloads
+      - mise.run
+      - mise-java.jdx.dev
+      - mise.jdx.dev
+      - mise-versions.jdx.dev
+      - nodejs.org
+      - api.adoptium.net
+      - download.java.net
+
+      # npm
+      - "**.npmjs.org"
+      - npm.pkg.github.com
+
+      # Git repositories and GitHub CLI extensions
+      - github.com
+
+      # Nav design system, runtime assets, and Nais documentation
+      - "**.nav.no"
+      - "**.nais.io"
+
+      # Third-party development resources
+      - "**.cypress.io"
+      - eslint.org
+      - react.dev
+      - nextjs.org
+      - junit.org
+      - apache.org
+      - kotlinlang.org
+      - openjdk.org
+      - wiremock.org
+      - confluent.io
+      - postgresql.org
+      - typescript-eslint.io

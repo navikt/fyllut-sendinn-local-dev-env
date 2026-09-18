@@ -1,0 +1,69 @@
+#!/bin/sh
+set -eu
+
+repo="$HOME/.local/share/fyllut-sendinn-local-dev-env"
+skills_dir="$HOME/.agents/skills"
+manifest="$skills_dir/.fyllut-sendinn-managed"
+
+command -v opencode >/dev/null 2>&1 || exit 0
+
+if [ -d "$repo/.git" ]; then
+  git -C "$repo" pull --ff-only
+elif [ -e "$repo" ]; then
+  echo "Refusing to replace unmanaged OpenCode skill source: $repo" >&2
+  exit 1
+else
+  git clone https://github.com/navikt/fyllut-sendinn-local-dev-env.git "$repo"
+fi
+
+mkdir -p "$skills_dir"
+next_manifest=$(mktemp)
+trap 'rm -f "$next_manifest"' EXIT
+
+is_managed_link() {
+  name=$1
+  target=$2
+  expected=$3
+
+  if [ -f "$manifest" ] && grep -qxF "$name" "$manifest"; then
+    return 0
+  fi
+
+  [ "$(readlink "$target")" = "$expected" ]
+}
+
+for plugin_skills in "$repo"/plugins/*/skills; do
+  [ -d "$plugin_skills" ] || continue
+  for skill in "$plugin_skills"/*; do
+    [ -f "$skill/SKILL.md" ] || continue
+    name=$(basename "$skill")
+    target="$skills_dir/$name"
+
+    if grep -qxF "$name" "$next_manifest"; then
+      echo "Duplicate OpenCode skill name: $name" >&2
+      exit 1
+    fi
+    if { [ -e "$target" ] || [ -L "$target" ]; } &&
+      { [ ! -L "$target" ] || ! is_managed_link "$name" "$target" "$skill"; }; then
+      echo "Refusing to replace unmanaged OpenCode skill: $target" >&2
+      exit 1
+    fi
+
+    ln -sfn "$skill" "$target"
+    printf '%s\n' "$name" >> "$next_manifest"
+  done
+done
+
+if [ -f "$manifest" ]; then
+  while IFS= read -r name; do
+    [ -n "$name" ] || continue
+    if ! grep -qxF "$name" "$next_manifest" && [ -L "$skills_dir/$name" ]; then
+      case $(readlink "$skills_dir/$name") in
+        "$repo"/plugins/*/skills/*) rm -f "$skills_dir/$name" ;;
+      esac
+    fi
+  done < "$manifest"
+fi
+
+mv "$next_manifest" "$manifest"
+trap - EXIT

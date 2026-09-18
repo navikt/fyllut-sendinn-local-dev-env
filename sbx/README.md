@@ -1,97 +1,267 @@
 # Docker sandbox
 
-NAV recommends [cplt](https://github.com/navikt/cplt) for running agents in a sandbox, but it primarily supports single-repository workspaces. See the [multi-repository support issue](https://github.com/navikt/cplt/issues/165) for alternatives. This setup uses [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/).
+NAV recommends [cplt](https://github.com/navikt/cplt) for running agents in a
+sandbox, but it primarily supports single-repository workspaces. See the
+[PRD: Sessions that span several repositories](https://github.com/navikt/cplt/issues/344).
+
+This setup uses [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/).
+
+## Development mixin
+
+`sbx/kits/development` is a schema-v2 mixin for the FyllUt and SendInn
+repositories. It adds:
+
+- System packages required by the frontend tools and Cypress
+- [mise](https://mise.jdx.dev/) and its shims on `PATH`
+- The `github/gh-stack` GitHub CLI extension
+- The Copilot plugins published by this repository
+- The required network allow list
+- `USE_BUILTIN_RIPGREP=false` for Copilot CLI on arm64 hosts with 16 KB pages
+
+The mixin is separate from the agent. It can be combined with Copilot,
+OpenCode, T3 Code, and other agents that use a Debian-based image.
+Plugin setup is skipped when the selected agent image does not contain Copilot
+CLI. In a Copilot sandbox, the marketplace and all four plugins are installed
+during creation and updated whenever the sandbox starts.
+
+In an OpenCode sandbox, the mixin clones this repository and links every plugin
+skill into `~/.agents/skills`. Docker Sandboxes mounts
+`~/.config/opencode/skills` read-only, while OpenCode also discovers the
+agent-compatible directory. The bundled synchronization script fast-forwards
+the clone and reconciles managed links whenever the sandbox starts. Complete
+skill directories are linked so bundled scripts and reference files remain
+available. Restart OpenCode after an update to discover newly added skills.
 
 ## Setup
 
 1. [Install Docker Sandboxes](https://docs.docker.com/ai/sandboxes/install/).
-2. Sign in and configure GitHub authentication:
+2. Sign in and configure the GitHub service credential used by `gh` and Git:
 
    ```sh
    sbx login
-   sbx secret set -g github -t "$(gh auth token)"
+   sbx secret set github --command 'gh auth token'
    ```
-3. Build and load the custom Copilot image from the repository root, making our sandbox docker image available locally.
+
+3. Configure Copilot's separate credential using the token from the host's
+   authenticated GitHub CLI:
 
    ```sh
-   mise run sandbox:build
+   sbx secret set copilot --command 'gh auth token'
    ```
 
-The image extends Docker's [Copilot template](https://docs.docker.com/ai/sandboxes/customize/templates/) with a nested Docker engine, Cypress dependencies, and [mise](https://mise.jdx.dev/) for managing project-specific tool versions.
+   The built-in Copilot kit uses `GH_TOKEN` for GitHub and
+   `COPILOT_GITHUB_TOKEN` for the Copilot API. Both services may resolve the
+   same host token, but they remain separate so the proxy injects it only into
+   the domains declared for each service. The token must belong to an account
+   with an active Copilot subscription.
 
-## Development in this repository
+4. Allow kits from this repository's GitHub organization in addition to Docker
+   Hub:
 
-Start a sandbox:
+   ```sh
+   sbx settings set kit.allowedSources '["docker.io/","github.com/navikt/"]'
+   ```
+
+## GitHub Packages
+
+Some repository `.npmrc` files and lockfiles resolve `@navikt` packages from
+`npm.pkg.github.com`. Configure `NODE_AUTH_TOKEN` even when the same package is
+also publicly available from npmjs, because the configured registry and locked
+tarball URL determine where the package manager downloads it.
+
+First verify that the host GitHub CLI token has the `read:packages` scope:
 
 ```sh
-mise run sandbox:run
+gh auth status
 ```
 
-Or you can pass `--name` to choose a sandbox name:
+If the scope is missing, add it and verify again:
 
 ```sh
-mise run sandbox:run --name innsending
+gh auth refresh -h github.com -s read:packages
+gh auth status
 ```
 
-Validate the kit after making changes:
+Register the current GitHub CLI token as a global custom secret. The command is
+resolved on demand, and the real token remains on the host:
+
+```sh
+sbx secret set-custom \
+  --host npm.pkg.github.com \
+  --env NODE_AUTH_TOKEN \
+  --command 'gh auth token'
+```
+
+The command prints a generated `sbx-cs-...` placeholder. New sandboxes created
+after the global secret is registered receive this `NODE_AUTH_TOKEN` placeholder
+automatically, and the development mixin writes it to npm's user configuration
+during creation. The real token remains on the host and the sandbox proxy
+substitutes it for requests to `npm.pkg.github.com`.
+
+## Create Sandboxes
+
+A mixin is applied only when the sandbox is created, so remove an existing
+sandbox before recreating it with changed kit configuration. These examples
+load the development mixin directly from its GitHub repository, so this
+repository does not need to be checked out locally.
+
+### Copilot
+
+The built-in `copilot` agent supplies the standard `copilot-docker` image:
+
+```sh
+sbx create copilot ~/ws-innsending \
+  --name ws01 \
+  --kit "git+https://github.com/navikt/fyllut-sendinn-local-dev-env.git#dir=sbx/kits/development"
+```
+
+### OpenCode
+
+```sh
+sbx create opencode ~/Projects/ws4 \
+  --name ws4 \
+  --kit "git+https://github.com/navikt/fyllut-sendinn-local-dev-env.git#dir=sbx/kits/development"
+```
+
+### OpenCode With T3 Code
+
+Add the T3 Code mixin when the sandbox will be accessed through T3 Code:
+
+```sh
+sbx create opencode ~/Projects/ws4 \
+  --name ws4 \
+  --kit docker.io/sbx/t3code-kit:latest \
+  --kit "git+https://github.com/navikt/fyllut-sendinn-local-dev-env.git#dir=sbx/kits/development"
+```
+
+## Use The Sandbox
+
+Attach to the configured agent:
+
+```sh
+sbx run --name <sandbox-name>
+```
+
+Open a shell:
+
+```sh
+sbx exec -it <sandbox-name> bash
+```
+
+Run repository commands through mise so the versions pinned in each
+repository's `mise.toml` are used. For example:
+
+```sh
+sbx exec <sandbox-name> -- bash -lc \
+  'cd /path/to/repository && mise install && mise exec -- pnpm install --frozen-lockfile'
+```
+
+## Develop The Mixin
+
+Validate the mixin after making changes:
 
 ```sh
 mise run sandbox:validate
 ```
 
-## GitHub Packages access
-
-Before creating the sandbox, configure a GitHub token with `read:packages` access. Running this command is necessary if you need access to download @navikt npm packages. Remove `--sandbox innsending` to share the secret with all sandboxes. 
-
-```sh
-read -s PACKAGE_TOKEN
-sbx secret set-custom \
-  --sandbox innsending \
-  --host npm.pkg.github.com \
-  --env NODE_AUTH_TOKEN \
-  --value "$PACKAGE_TOKEN"
-unset PACKAGE_TOKEN
-```
-
-## Start the sandbox
-
-From the workspace containing the checked-out repositories, use either the kit or the manual setup.
-
-### Kit (recommended)
-
-The kit uses the custom image and includes the required network policy:
-
-Allow kits from the NAV GitHub organization and create the sandbox directly from the kit's Git URL:
+To test uncommitted changes, replace the Git URL in any creation command with a
+path to the local kit and run the command from this repository's root:
 
 ```sh
-sbx settings set kit.allowedSources '["docker.io/","github.com/navikt/"]'
+--kit "$(pwd)/sbx/kits/development"
 ```
 
-```sh
-sbx run innsending-copilot --name ws1 --kit "git+https://github.com/navikt/fyllut-sendinn-local-dev-env.git#dir=sbx/kits/copilot"
-```
-
-`innsending-copilot` is the agent name defined by the kit, while `ws1` is the name of the sandbox. The kit only needs to be specified when the sandbox is created. To run the same sandbox later, omit `--kit`:
-
-```sh
-sbx run innsending-copilot --name ws1
-```
-
-The agent name remains `innsending-copilot` because kits cannot override the built-in `copilot` agent. Local kits require `kit.allowLocalKits` to be `true`, which is the default.
-
-### Manual setup (without kit)
-
-```sh
-sbx run copilot -t innsending-sbx-copilot:latest
-sbx policy allow network --sandbox <sandbox-name> "archive.apache.org:443,download.cypress.io:443,github-package-registry-mirror.gc.nav.no:443,mise-java.jdx.dev:443,packages.confluent.io:443,repo1.maven.org:443,cdn.nav.no:443,www.nav.no:443,cdn.cypress.io:443"
-```
+Local kits require `kit.allowLocalKits` to be `true`, which is the default.
 
 ## Troubleshooting
 
-Inspect blocked network requests and add required hosts to `permissions.network.allow` in `sbx/kits/copilot/spec.yaml`:
+Inspect blocked requests and proxy routing:
 
 ```sh
 sbx policy log
+```
+
+Requests using proxy-managed credentials must show `forward` rather than
+`forward-bypass`. A `forward-bypass` request sends the placeholder without
+credential substitution.
+
+### GitHub Credential Proxy Regression
+
+Docker Sandboxes v0.43.0 has an open
+[credential-proxy issue](https://github.com/docker/sbx-releases/issues/595)
+where requests to GitHub may use `forward-bypass`. In that case, `GH_TOKEN`
+contains a proxy placeholder that GitHub rejects as invalid. Confirm the
+problem only after confirming that both required service secrets exist:
+
+```sh
+sbx secret ls
+```
+
+The output should include global `github` and `copilot` service secrets. Run
+`gh auth status` inside the sandbox and check the host's policy log:
+
+```sh
+sbx policy log
+```
+
+If both services are configured but requests still use `forward-bypass`, pass
+the host's real GitHub token into the agent session as both variables. Copilot
+CLI prioritizes `COPILOT_GITHUB_TOKEN`, while `gh` uses `GH_TOKEN`:
+
+```sh
+export GH_TOKEN="$(gh auth token)"
+export COPILOT_GITHUB_TOKEN="$GH_TOKEN"
+sbx run --name <sandbox-name> -e GH_TOKEN -e COPILOT_GITHUB_TOKEN
+unset GH_TOKEN COPILOT_GITHUB_TOKEN
+```
+
+For a new sandbox, pass it during creation:
+
+```sh
+export GH_TOKEN="$(gh auth token)"
+export COPILOT_GITHUB_TOKEN="$GH_TOKEN"
+sbx create copilot /path/to/workspace \
+  --name <sandbox-name> \
+  -e GH_TOKEN \
+  -e COPILOT_GITHUB_TOKEN \
+  --kit "git+https://github.com/navikt/fyllut-sendinn-local-dev-env.git#dir=sbx/kits/development"
+unset GH_TOKEN COPILOT_GITHUB_TOKEN
+```
+
+This workaround weakens the sandbox's credential isolation. The real token is
+placed in the sandbox environment instead of remaining on the host behind the
+credential proxy. Processes and agents inside the sandbox can read and exfiltrate
+it, and a value supplied during creation is stored with the sandbox for future
+sessions. Prefer a narrowly scoped token, avoid untrusted code while using the
+workaround, remove the sandbox when finished, and return to the proxy-managed
+credential as soon as the upstream issue is fixed.
+
+### GitHub Packages In An Existing Sandbox
+
+A global custom secret is applied automatically only to sandboxes created after
+the secret was registered. To update an existing sandbox, copy the safe
+`sbx-cs-...` placeholder shown by `sbx secret set-custom` or `sbx secret ls`,
+then configure npm inside that sandbox:
+
+```sh
+NODE_AUTH_PLACEHOLDER='<paste-sbx-cs-placeholder>'
+sbx exec -e NODE_AUTH_TOKEN="$NODE_AUTH_PLACEHOLDER" <sandbox-name> -- \
+  bash -lc 'npm config set "//npm.pkg.github.com/:_authToken" "$NODE_AUTH_TOKEN" --location=user'
+```
+
+Test the credential without changing a repository:
+
+```sh
+sbx exec -e NODE_AUTH_TOKEN="$NODE_AUTH_PLACEHOLDER" <sandbox-name> -- \
+  bash -lc 'npm view @navikt/fnrvalidator@2.2.1 version --registry=https://npm.pkg.github.com'
+```
+
+If a global and a sandbox-scoped custom secret both use `NODE_AUTH_TOKEN`, the
+sandbox cannot synchronize them. Use `sbx secret ls` to find the duplicate and
+remove the sandbox-scoped entry by its placeholder:
+
+```sh
+sbx secret rm --sandbox <sandbox-name> --placeholder <duplicate-placeholder> --force
 ```
 
 Unpublish a port:
