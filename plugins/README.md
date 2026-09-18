@@ -8,6 +8,15 @@ and `support` plugins.
 
 Install the plugin directly while developing it:
 
+If `copilot` is aliased to start a sandbox, bypass the alias with `\copilot`.
+For example:
+
+```sh
+\copilot plugin install ./plugins/chores
+```
+
+The commands below use `copilot` for readability.
+
 ```sh
 copilot plugin install ./plugins/chores
 copilot plugin install ./plugins/devx
