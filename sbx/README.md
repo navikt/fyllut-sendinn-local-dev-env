@@ -15,6 +15,7 @@ repositories. It adds:
 - [mise](https://mise.jdx.dev/) and its shims on `PATH`
 - The `github/gh-stack` GitHub CLI extension
 - The Copilot plugins published by this repository
+- The `observability-debugging` and `nais` skills from `navikt/copilot`
 - The required network allow list
 - `USE_BUILTIN_RIPGREP=false` for Copilot CLI on arm64 hosts with 16 KB pages
 
@@ -22,7 +23,9 @@ The mixin is separate from the agent. It can be combined with Copilot,
 OpenCode, T3 Code, and other agents that use a Debian-based image.
 Plugin setup is skipped when the selected agent image does not contain Copilot
 CLI. In a Copilot sandbox, the marketplace and all four plugins are installed
-during creation and updated whenever the sandbox starts.
+during creation and updated whenever the sandbox starts. The shared Nav skills
+are installed in `~/.agents/skills` during creation and updated on every
+startup, making them available to both Copilot and OpenCode.
 
 In an OpenCode sandbox, the mixin clones this repository and links every plugin
 skill into `~/.agents/skills`. Docker Sandboxes mounts
