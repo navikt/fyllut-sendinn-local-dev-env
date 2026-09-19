@@ -159,6 +159,39 @@ sbx exec <sandbox-name> -- bash -lc \
   'cd /path/to/repository && mise install && mise exec -- pnpm install --frozen-lockfile'
 ```
 
+### Monitor OpenCode Token Usage
+
+The development mixin installs
+[Better CCUsage](https://github.com/cobra91/better-ccusage). It reads OpenCode's
+local SQLite database and reports the token counts and estimated costs recorded
+for each model. Run it from a host terminal while OpenCode is running in the
+sandbox:
+
+```sh
+sbx exec -it <sandbox-name> -- bash -lc 'better-ccusage opencode daily --breakdown'
+sbx exec -it <sandbox-name> -- bash -lc 'better-ccusage opencode session'
+sbx exec -it <sandbox-name> -- bash -lc 'better-ccusage opencode blocks --active'
+```
+
+Better CCUsage reports model tokens and OpenCode's estimated API-equivalent
+cost. When OpenCode uses a GitHub Copilot subscription, these values are not the
+number of Copilot premium requests consumed and do not show the subscription's
+remaining quota. Use GitHub's billing and premium-request analytics for that
+authoritative account-level information.
+
+Better CCUsage does not provide a browser dashboard. Its `blocks --live` view
+is a terminal UI and is deprecated upstream, while the port exposed by the
+separate `@better-ccusage/mcp` package serves MCP rather than a web page. If a
+service in the sandbox does provide an HTTP dashboard and listens on
+`0.0.0.0:<sandbox-port>`, publish it from the host with:
+
+```sh
+sbx ports <sandbox-name> --publish <host-port>:<sandbox-port>/tcp
+```
+
+Then open `http://localhost:<host-port>` on the host. Port publication is
+runtime sandbox configuration and therefore is not declared in `spec.yaml`.
+
 ## Develop The Mixin
 
 Validate the mixin after making changes:
@@ -267,7 +300,7 @@ remove the sandbox-scoped entry by its placeholder:
 sbx secret rm --sandbox <sandbox-name> --placeholder <duplicate-placeholder> --force
 ```
 
-Unpublish a port:
+Unpublish a previously published port:
 
 ```sh
 sbx ports <sandbox-name> --unpublish <host-port>:<sandbox-port>

@@ -53,6 +53,12 @@ setup:
       user: "1000"
       description: Configure npm to use the proxy-managed GitHub Packages token
     - command: >-
+        if command -v opencode >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+          npm install --global --prefix /home/agent/.local better-ccusage@1.8.0;
+        fi
+      user: "1000"
+      description: Install Better CCUsage for local OpenCode token reports
+    - command: >-
         if command -v copilot >/dev/null 2>&1; then
           copilot plugin marketplace list --json |
           jq -e '.[] | select(.name == "fyllut-sendinn-plugins")' >/dev/null ||
