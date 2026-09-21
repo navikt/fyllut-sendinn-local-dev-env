@@ -59,7 +59,7 @@ user to inspect source code to understand the result.
 
 ## Collect the verdict
 
-Show the artifact and use `ask_user` to record one result:
+Show the artifact and ask the user for one result:
 
 - **Validated:** the draft describes the intended behavior or design.
 - **Revise:** the prototype exposed a wrong or missing decision.
