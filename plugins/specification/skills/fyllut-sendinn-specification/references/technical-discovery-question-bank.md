@@ -2,9 +2,9 @@
 
 Use this selectively after the functional basis and technical boundary are
 known. Investigate repository facts before asking the developer. Ask the whole
-current frontier in one round, with one decision per field, and explain each
-relevant trade-off. Apply defaults from the relevant development skill without
-asking the user to choose them.
+current frontier in one round, written in your reply, with one decision per
+question, and explain each relevant trade-off. Apply defaults from the
+relevant development skill without asking the user to choose them.
 
 ## Current state and boundaries
 

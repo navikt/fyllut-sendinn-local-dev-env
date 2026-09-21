@@ -20,19 +20,19 @@ Keep the modes separate. Both use the workflow below.
 
 ## Start
 
-Use `ask_user` for discovery. Ask questions in rounds, not as a long
-one-question-at-a-time sequence.
+Ask discovery questions in rounds, written directly in your reply. Do not use
+`ask_user` and do not ask one question at a time.
 
 1. **Open the first round.** Always ask whether the user wants a functional or
    technical specification, even when the prompt suggests one. If no change or
-   problem was provided, include a separate field asking:
+   problem was provided, include a separate question asking:
 
    > What would you like to specify? A rough description is enough.
 
-   Make the mode field required and use a single-select enum with exactly two
-   choices: **Functional specification** and **Technical specification**. Do
-   not offer an "unsure", "other", or any third mode. Recommend the better fit
-   when the prompt provides enough context.
+   The mode question is required and offers exactly two choices: **Functional
+   specification** and **Technical specification**. Do not offer an "unsure",
+   "other", or any third mode. Recommend the better fit when the prompt
+   provides enough context.
 
 2. **Frame the work.** Investigate the current state, then summarize the
    problem, outcome, and boundary. Ask the user to correct the framing.
@@ -41,19 +41,27 @@ one-question-at-a-time sequence.
 
 - **Map a decision tree.** Track which decisions depend on other decisions.
   The frontier is every unresolved decision whose prerequisites are settled.
-- **Ask the whole frontier.** Put all current frontier questions in one
-  `ask_user` form. Use one field per decision and number questions continuously
-  across rounds. Ask a single question only when the frontier contains one
-  decision.
-- **Keep dependencies between rounds.** If Q5 depends on Q2, do not include Q5
-  in the same round as Q2. Recompute the frontier after every response.
+- **Ask the whole frontier.** Put every current frontier question in one
+  reply. Number questions continuously across rounds, so Q7 in round 3 is
+  never confused with Q7 in round 1. Ask a single question only when the
+  frontier contains one decision.
+- **Wait for the round to be answered.** Do not start the next round, and do
+  not draft, until the user has responded. Every answer reshapes the tree:
+  settled decisions push the frontier outward and unblock questions that
+  depended on them. Recompute the frontier after every response.
+- **Keep dependencies between rounds.** A question whose answer depends on
+  another question still open in this round belongs to a later round. If Q5
+  depends on Q2, do not ask them together.
 - **Find facts; ask for decisions.** Read documentation, code, tests, current
   behavior, terminology, issue conventions, and prior art. Do not ask the user
   for facts available through tools. If research is still running, continue
   with independent frontier questions and hold only the questions that depend
   on that research.
-- **Keep fields focused.** Each field must contain one decision. Do not combine
-  unrelated choices just because they are asked in the same round.
+- **State what you found.** Before a round, summarize the facts your research
+  settled, so the user can see which questions no longer need asking and can
+  correct a wrong finding before it becomes a decision.
+- **Keep questions focused.** Each question must contain one decision. Do not
+  combine unrelated choices just because they are asked in the same round.
 - **Keep questions concise.** Use a short title, one brief sentence explaining
   why the decision matters, and a short recommendation. Omit context already
   established in the conversation or available in the repository.
@@ -69,14 +77,17 @@ one-question-at-a-time sequence.
 - **Track status.** Separate verified facts, confirmed decisions, accepted
   assumptions with risks, and open questions.
 
-Use this field format:
+Write each question in this format:
 
 ```md
-Q<n> — <title>
+**Q<n> — <title>**
 
-<Why the decision matters.>
-Recommendation: <choice and reason>
+<The choice, in one or two sentences.>
+*Recommendation: <choice and reason>*
 ```
+
+Introduce a round with a heading such as **Round 2**, so the user can see
+which answers belong together.
 
 The interview is complete when the frontier is empty: every relevant branch
 has been visited and no decision remains silently assumed. Confirm shared
@@ -380,14 +391,14 @@ Specify enough to guide implementation without listing every code edit.
 
 ## Optional prototype validation
 
-After presenting the complete draft, always include these choices in the
-confirmation form:
+After presenting the complete draft, always offer these three choices in your
+reply:
 
 - **Approve the specification**
 - **See a prototype**
 - **Revise the draft**
 
-Set **Approve the specification** as the default choice.
+Recommend **Approve the specification** unless there is a reason not to.
 
 Recommend prototype validation when the draft depends on an interaction,
 screen, conditional journey, state change, or recovery flow that is easier to
@@ -395,8 +406,9 @@ judge by trying it. Otherwise recommend approval or revision.
 
 When prototype validation is selected, follow
 [the prototype validation workflow](references/prototype-validation.md). Add
-the verdict to the draft, apply any revisions, and show the same confirmation
-form again. Do not ask for a handoff until the user approves the specification.
+the verdict to the draft, apply any revisions, and offer the same three
+choices again. Do not ask for a handoff until the user approves the
+specification.
 
 ## Approval and handoff
 
@@ -415,16 +427,17 @@ prototype validation or revision.
 Before handoff, follow any repository-specific skill maintenance instructions
 provided by the skill that invoked this one.
 
-After approval, use `ask_user` to choose the handoff:
+After approval, ask the user to choose the handoff. Offer these three choices
+in your reply:
 
-- **Create a GitHub issue**
+- **Create GitHub issues**
 - **Create a Copilot plan**
 - **Exit — no specification handoff is needed because the initial prompt is
   already clear**
 
-Recommend one option in the `ask_user` message and set it as the default:
+Recommend one option and say why:
 
-- Recommend **GitHub issue** when the work is too large for one implementation
+- Recommend **GitHub issues** when the work is too large for one implementation
   plan, should be split into several plans or tickets, crosses teams or system
   boundaries, needs staged delivery, or requires a lasting decision record.
 - Recommend **Copilot plan** when one coherent implementation plan can cover
@@ -438,14 +451,69 @@ Do not recommend based only on diff size. Consider behavioral reach,
 dependencies, operational risk, and how many independently deliverable pieces
 the work contains.
 
-For a GitHub issue:
+## GitHub issue handoff
+
+Create as many issues as the work actually has independently deliverable
+pieces, and no more. Most specifications need one issue.
+
+### Choosing the shape
+
+**One issue** when the work is a single deliverable: one repository, one
+reviewable change set, nothing that has to land or deploy in a particular
+order. Use the approved draft unchanged as the body.
+
+**One issue per piece, plus a main issue**, when the work splits into pieces
+that different people could pick up in parallel, that live in different
+repositories, or that must be merged or deployed in a set order.
+
+Do not split a single repository's work into one issue per file, per layer, or
+per commit. If the pieces would be reviewed in one pull request, they are one
+issue.
+
+### When there is one issue
 
 1. Use the approved draft unchanged.
 2. Add only requested labels or labels verified for this issue type.
-3. Create one issue with
+3. Create it with
    `gh issue create --title <title> --body-file <temporary-file>`.
 4. Remove the temporary file.
 5. Return the issue URL.
+
+### When there are several issues
+
+Ask the user which repository should own the main issue if the specification
+does not already say. The main issue is the authoritative record; the
+implementation issues are working instructions.
+
+1. **Create the main issue first.** Its body is the approved draft. State at
+   the top that it is authoritative and that the implementation issues link
+   back to it. Add an implementation section containing:
+   - a table of the implementation issues, with repository, what each depends
+     on, and whether it can start immediately;
+   - the merge and deploy order, and which pieces are genuinely parallel;
+   - the rollback point, when the work changes production behavior.
+2. **Create one implementation issue per piece.** Each one:
+   - opens by naming the main issue as authoritative and telling the reader to
+     read it first;
+   - lists only the changes in that repository, with concrete file paths;
+   - lists only its own acceptance criteria;
+   - names its dependencies and its position in the deploy order;
+   - gives the repository's build and test commands.
+3. **Do not duplicate the rationale.** Reference decisions by their tag, such
+   as `TD-2`, instead of restating the reasoning. A reader who needs the "why"
+   follows the link. A decision recorded in two places will eventually
+   disagree with itself.
+4. **Link the issues back.** Use `navikt/<repo>#<number>` for cross-repository
+   references, and `#<number>` within the same repository.
+5. **Fill in the main issue's table** once the implementation issues exist and
+   their numbers are known. Verify the links resolve.
+6. Remove the temporary files and return every issue URL.
+
+Create the issues with `gh issue create --repo navikt/<repo> --title <title>
+--body-file <temporary-file>`, or run `gh` from each repository's working
+directory. Confirm each repository's remote before creating anything there.
+
+## Other handoffs
 
 For Copilot plan, keep the approved specification in the conversation and tell
 the user to enter:
