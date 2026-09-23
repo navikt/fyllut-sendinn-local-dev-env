@@ -20,8 +20,8 @@ Keep the modes separate. Both use the workflow below.
 
 ## Start
 
-Ask discovery questions in rounds, written directly in your reply. Do not use
-`ask_user` and do not ask one question at a time.
+Ask discovery questions in rounds with `ask_user`. Ask exactly one question
+per `ask_user` call. A round may contain several consecutive calls.
 
 1. **Open the first round.** Always ask whether the user wants a functional or
    technical specification, even when the prompt suggests one. If no change or
@@ -41,14 +41,15 @@ Ask discovery questions in rounds, written directly in your reply. Do not use
 
 - **Map a decision tree.** Track which decisions depend on other decisions.
   The frontier is every unresolved decision whose prerequisites are settled.
-- **Ask the whole frontier.** Put every current frontier question in one
-  reply. Number questions continuously across rounds, so Q7 in round 3 is
-  never confused with Q7 in round 1. Ask a single question only when the
-  frontier contains one decision.
+- **Ask the whole frontier.** Freeze the current frontier as one round, then
+  ask each question in a separate `ask_user` call. Continue until every
+  question in the round has been answered. Number questions continuously
+  across rounds, so Q7 in round 3 is never confused with Q7 in round 1.
 - **Wait for the round to be answered.** Do not start the next round, and do
-  not draft, until the user has responded. Every answer reshapes the tree:
-  settled decisions push the frontier outward and unblock questions that
-  depended on them. Recompute the frontier after every response.
+  not draft, until the user has answered every question in the current round.
+  The answers reshape the tree: settled decisions push the frontier outward
+  and unblock questions that depended on them. Recompute the frontier after
+  the round is complete.
 - **Keep dependencies between rounds.** A question whose answer depends on
   another question still open in this round belongs to a later round. If Q5
   depends on Q2, do not ask them together.
@@ -57,9 +58,10 @@ Ask discovery questions in rounds, written directly in your reply. Do not use
   for facts available through tools. If research is still running, continue
   with independent frontier questions and hold only the questions that depend
   on that research.
-- **State what you found.** Before a round, summarize the facts your research
-  settled, so the user can see which questions no longer need asking and can
-  correct a wrong finding before it becomes a decision.
+- **State what you found.** In the first `ask_user` message of a round,
+  summarize the facts your research settled. This lets the user see which
+  questions no longer need asking and correct a wrong finding before it
+  becomes a decision.
 - **Keep questions focused.** Each question must contain one decision. Do not
   combine unrelated choices just because they are asked in the same round.
 - **Keep questions concise.** Use a short title, one brief sentence explaining
@@ -77,17 +79,18 @@ Ask discovery questions in rounds, written directly in your reply. Do not use
 - **Track status.** Separate verified facts, confirmed decisions, accepted
   assumptions with risks, and open questions.
 
-Write each question in this format:
+Use this format in each `ask_user` message:
 
 ```md
-**Q<n> — <title>**
+**Round <n> · Q<n> — <title>**
 
 <The choice, in one or two sentences.>
 *Recommendation: <choice and reason>*
 ```
 
-Introduce a round with a heading such as **Round 2**, so the user can see
-which answers belong together.
+Define exactly one field in each `ask_user` schema. Choose the field type that
+fits the decision, and provide concise options when the likely choices are
+known.
 
 The interview is complete when the frontier is empty: every relevant branch
 has been visited and no decision remains silently assumed. Confirm shared
